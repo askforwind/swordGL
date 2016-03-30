@@ -1,0 +1,19 @@
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+set(CMAKE_C_COMPILER /usr/bin/clang)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
+set(CMAKE_CXX_FLAGS_DEBUG 
+    "${CMAKE_CXX_FLAGS_DEBUG} -g -Weverything -DDEBUG -Wno-c++98-compat")
+set(CMAKE_CXX_FLAGS_RELEASE
+    "${CMAKE_CXX_FLAGS_RELEASE} -O2 -Wall -DNDEBUG -Wno-c++98-compat")
+
+set(LOG_SRC ./Config.h	
+    ./Log.h
+    ./LogManager.cc
+    ./LogManager.h
+    ./Logstring.h)
+
+add_library(WindLog SHARED ${LOG_SRC})
+target_link_libraries(WindLog log4cplus)

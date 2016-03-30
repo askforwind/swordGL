@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/luoyi/develop/opengl/sword/third_part/Config.h
+OGRE/OgrePlatform.h
+-
+
+/home/luoyi/develop/opengl/sword/third_part/Log.h
+log4cplus/loggingmacros.h
+-
+log4cplus/appender.h
+-
+log4cplus/logger.h
+-
+
+/home/luoyi/develop/opengl/sword/third_part/LogManager.cc
+LogManager.h
+/home/luoyi/develop/opengl/sword/third_part/LogManager.h
+log4cplus/logger.h
+-
+log4cplus/consoleappender.h
+-
+log4cplus/fileappender.h
+-
+log4cplus/layout.h
+-
+log4cplus/helpers/loglog.h
+-
+
+/home/luoyi/develop/opengl/sword/third_part/LogManager.h
+Config.h
+/home/luoyi/develop/opengl/sword/third_part/Config.h
+Logstring.h
+/home/luoyi/develop/opengl/sword/third_part/Logstring.h
+Log.h
+/home/luoyi/develop/opengl/sword/third_part/Log.h
+
+/home/luoyi/develop/opengl/sword/third_part/Logstring.h
+log4cplus/tstring.h
+-
+
