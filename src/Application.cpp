@@ -5,8 +5,7 @@
 #include<glm/glm.hpp>
 Application::Application()
     : quit_(false),
-      use_msaa_(true) ,
-      evt_() {
+      use_msaa_(true) , {
     root_ = new SWORD::Root;
 }
 
@@ -15,17 +14,17 @@ Application::~Application() {
 }
 
 void Application::update(float d) {
-
-    SDL_PollEvent(&evt_);
-    switch(evt_.type) {
+    SDL_Event evt;
+    SDL_PollEvent(&evt);
+    switch(evt.type) {
     case SDL_QUIT:
         quit_ = true;
         break;
     case SDL_KEYDOWN:
-        keyPressed(evt_.key);
+        keyPressed(evt.key);
         break;
     case SDL_MOUSEBUTTONDOWN:
-        mousePressed(evt_.button);
+        mousePressed(evt.button);
         break;
     }
 
@@ -101,6 +100,8 @@ void Application::render(float diff) {
     (void)(diff);
     root_->get_batch_manager()->drawAllBatch();
 }
+
+
 
 
 

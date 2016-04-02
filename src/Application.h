@@ -35,7 +35,6 @@ class Application {
     void keyReleased (const SDL_KeyboardEvent &arg );
 
     void showFPS(float diff);
-    SDL_Event evt_;
     bool quit_;
     bool use_msaa_;
     SWORD::Root* root_;
