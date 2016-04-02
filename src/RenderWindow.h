@@ -4,18 +4,17 @@
 #
 # Author: luoyi 844262725@qq.com
 #
-# Last modified: 2016-03-22 09:52
+# Last modified: 2016-04-02 19:11
 #
 # Filename: RenderWindow.h
 #
 # Description:
 #
 ==================================================================*/
-#ifndef SWORD_RENDERWINDOW_H_
-#define SWORD_RENDERWINDOW_H_
 
-#include<string>
 #include"Platform.h"
+
+class SDL_Window;
 
 SWORD_BEGIN
 
@@ -23,33 +22,23 @@ class SWORD_EXPORT RenderWindow {
   public:
     RenderWindow();
 
-    virtual ~RenderWindow();
+    void attach(SDL_Window* win);
 
-    virtual std::string get_hwnd() = 0;
+    void set_title(const char* title);
 
-    virtual void set_visible(bool vis) = 0;
+    void set_visible(bool visable);
 
-    virtual void set_title(const std::string& title) = 0;
+    void get_win_size(int& width, int& height);
 
-    virtual void get_win_size(int& width, int& height) = 0;
+    void set_fullscreen(bool full);
 
-  protected:
-    virtual void destroy() = 0;
-
-    bool visible_;
+  private:
+    bool vis_;
+    bool fullscreen_;
+    SDL_Window* win_;
 };
 
 SWORD_END
-
-#endif //SWORD_RENDERWINDOW_H
-
-
-
-
-
-
-
-
 
 
 

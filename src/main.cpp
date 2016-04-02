@@ -1,17 +1,10 @@
-#include<glm/glm.hpp>
-#include<iostream>
-#include"Platform.h"
 #include"Application.h"
-
+#include<string.h>
 int main() {
-    Application app;
-    app.init();
-    app.run();
+    Application a;
+    a.run();
     return 0;
 }
-
-
-
 
 
 

@@ -12,25 +12,19 @@ set(SRC ./src/Platform.h
     ./src/main.cpp
     ./src/RenderWindow.h
     ./src/RenderWindow.cpp
-    ./src/SwordGLXSupport.h
-    ./src/SwordGLXSupport.cpp
-    ./src/SwordGLXWindow.h
-    ./src/SwordGLXWindow.cpp
-    ./src/SDLSupport.h
-    ./src/SDLSupport.cpp
      ./src/shader.cpp
 	./src/shader.hpp
     ./src/Application.h
     ./src/Application.cpp
-    ./src/GLSupport.h
-    ./src/GLSupport.cpp
     ./src/Batch.h
     ./src/Batch.cpp
     ./src/AppInputHandle.cpp
     ./src/BatchManager.h
     ./src/BatchManager.cpp
     ./src/Math.h
-    ./src/Math.cpp)
+    ./src/Math.cpp
+    ./src/Root.h
+    ./src/Root.cpp)
 
 
 

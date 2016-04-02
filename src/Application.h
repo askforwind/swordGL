@@ -1,6 +1,5 @@
-#include"GLSupport.h"
-#include"BatchManager.h"
-#include<chrono>
+#include"Root.h"
+#include"Timer.h"
 #include<vector>
 
 class SDL_Window;
@@ -13,11 +12,9 @@ struct SDL_KeyboardEvent;
 class Application {
   public:
     Application();
-    ~Application();
+    ~Application() ;
 
-    void init();
-
-    void update(std::chrono::microseconds diff);
+    void update(float diff);
 
     void createSince();
 
@@ -25,7 +22,7 @@ class Application {
 
     void run();
 
-    void render(std::chrono::microseconds diff);
+    void render(float diff);
   private:
     std::vector<glm::vec3> bezier_control_;
     std::vector<glm::vec3> bezier_curve_;
@@ -37,17 +34,21 @@ class Application {
     void keyPressed( const SDL_KeyboardEvent &arg ) ;
     void keyReleased (const SDL_KeyboardEvent &arg );
 
-    void showFPS(std::chrono::microseconds diff);
-
-    SDL_Window* sdl_win_;
-    SWORD::GLSupport* gl_support_;
-    SWORD::BatchManager batch_mgr_;
-
-/*    uint32_t proId;*/
-    /*uint32_t shader_mvp_;*/
+    void showFPS(float diff);
+    SDL_Event evt_;
     bool quit_;
     bool use_msaa_;
+    SWORD::Root* root_;
+    Timer timer_;
 };
+
+
+
+
+
+
+
+
 
 
 

@@ -102,11 +102,13 @@ void BatchManager::destroyAllBatch() {
 void BatchManager::cleanStaticBatch() {
     for(std::pair<const BatchConfig, Batch>& i : static_batch_list_)
         i.second.clean();
+    static_batch_list_.clear();
 }
 
 void BatchManager::cleanDynamicBatch() {
     for(std::pair<const BatchConfig, Batch>& i : dynamic_batch_list_)
         i.second.clean();
+    dynamic_batch_list_.clear();
 }
 SWORD_END
 
