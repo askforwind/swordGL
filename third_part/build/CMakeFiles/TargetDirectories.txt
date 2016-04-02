@@ -1,1 +1,0 @@
-/home/luoyi/develop/opengl/sword/third_part/build/CMakeFiles/WindLog.dir

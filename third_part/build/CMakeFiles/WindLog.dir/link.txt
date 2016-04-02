@@ -1,1 +1,0 @@
-/usr/bin/clang++  -fPIC  -std=c++11 -g -g -Weverything -DDEBUG -Wno-c++98-compat  -shared -Wl,-soname,libWindLog.so -o libWindLog.so CMakeFiles/WindLog.dir/LogManager.cc.o -llog4cplus 
