@@ -1,4 +1,5 @@
 #include"Root.h"
+#include"LogManager.h"
 #include<GL/glew.h>
 #include<SDL2/SDL.h>
 
@@ -22,14 +23,8 @@ void Root::init() {
     WIND::LogManager::set_default_file_logger_format(
         WIND_LOG_TEXT("%D{%H:%M:%S} %p: %m in %M\n"));
 
-#ifdef SWORD_PLANTFORM_LINUX
-    default_log_ = WIND::LogManager::get_default_console_logger();
-#else
-    default_log_ = WIND::LogManager::get_default_file_logger();
-#endif
-
     if(SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        WIND_LOG_ERROR(default_log_, SDL_GetError());
+        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, SDL_GetError());
         exit(0);
     }
 
@@ -39,6 +34,8 @@ void Root::init() {
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
     }
+
+    WIND_LOG_TRACE(DEFAULT_WIND_LOGGER, glGetString(GL_VERSION));
 }
 
 void Root::createRenderWindow() {
@@ -53,17 +50,17 @@ void Root::createRenderWindow() {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     win_ = SDL_CreateWindow("OpenGL Window",
-                                        SDL_WINDOWPOS_CENTERED,
-                                        SDL_WINDOWPOS_CENTERED,
-                                        800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+                            SDL_WINDOWPOS_CENTERED,
+                            SDL_WINDOWPOS_CENTERED,
+                            800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     if (!win_) {
-        WIND_LOG_ERROR(default_log_, SDL_GetError());
+        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, SDL_GetError());
         exit(0);
     }
 
     context_ = SDL_GL_CreateContext(win_);
     if(!context_) {
-        WIND_LOG_ERROR(default_log_, SDL_GetError());
+        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, SDL_GetError());
     }
     render_window_.attach(win_);
 }
@@ -75,6 +72,13 @@ void Root::destroyRenderWindow() {
 }
 
 SWORD_END
+
+
+
+
+
+
+
 
 
 

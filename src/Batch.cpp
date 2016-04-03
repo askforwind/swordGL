@@ -2,44 +2,57 @@
 #include"LogManager.h"
 #include<GL/glew.h>
 #include<GL/glext.h>
-#include<GL/glu.h>
 #include<cassert>
-#include<iostream>
 
 SWORD_BEGIN
 
 Batch::Batch(uint32_t mode,
              uint32_t draw_type,
              uint32_t shader,
-             size_t num_of_max_vertices)
+             size_t vertices_limit)
 
     : num_of_max_vertices_(0),
       num_of_used_vertices_(0),
       vao_(0),
       vbo_(0),
-      mode_(GL_POINTS),
-      draw_type_(0),
-      shader_(0),
-      last_(glm::vec3()) {
-    init(mode, draw_type, shader, num_of_max_vertices);
+      last_(glm::vec3()),
+    config_({GL_TRIANGLE_STRIP, GL_STATIC_DRAW, 0}) {
+    init(mode, draw_type, shader, vertices_limit);
 }
 
-void Batch::resetUsedVertices() {
+Batch::Batch(BatchConfig& config, size_t vertices_limit)
+
+    : num_of_max_vertices_(0),
+      num_of_used_vertices_(0),
+      vao_(0),
+      vbo_(0),
+      last_(glm::vec3()),
+    config_({GL_TRIANGLE_STRIP, GL_STATIC_DRAW, 0}) {
+    init(config, vertices_limit);
+}
+
+Batch::~Batch() {
+    deinit();
+}
+
+void Batch::unload() {
     num_of_used_vertices_ = 0;
     last_ = glm::vec3();
+}
+
+void Batch::init(BatchConfig& config, size_t vertices_limit) {
+    init(config.mode, config.draw_type, config.shader, vertices_limit);
 }
 
 void Batch::init(uint32_t mode,
                  uint32_t draw_type,
                  uint32_t shader ,
-                 size_t num_of_max_vertices) {
+                 size_t vertices_limit) {
 
-    clean();
+    deinit();
 
-    draw_type_ = draw_type;
-    num_of_max_vertices_ = num_of_max_vertices;
-    mode_ = mode;
-    shader_ = shader;
+    config_ = {mode, draw_type, shader};
+    num_of_max_vertices_ = vertices_limit;
 
     assert(num_of_max_vertices_ >= 1024 &&
            "batch size is smaller than 1024");
@@ -52,7 +65,7 @@ void Batch::init(uint32_t mode,
     glGenBuffers(1, &vbo_);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*num_of_max_vertices_, NULL, draw_type_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*num_of_max_vertices_, NULL, config_.draw_type);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -60,13 +73,12 @@ void Batch::init(uint32_t mode,
 
     GLenum err = glGetError();
     if(err != GL_NO_ERROR) {
-        WIND_LOG_ERROR(WIND::LogManager::get_default_console_logger(),
-                       gluErrorString(err));
+        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, gluErrorString(err));
         exit(0);
     }
 }
 
-void Batch::clean() {
+void Batch::deinit() {
     if(vbo_) {
         glDeleteBuffers(1, &vbo_);
         vbo_ = 0;
@@ -75,10 +87,11 @@ void Batch::clean() {
         glDeleteVertexArrays(1, &vao_);
         vao_ = 0;
     }
-    if(shader_) {
-        shader_ = 0;
-    }
+
+    config_.shader = 0;
+
     num_of_used_vertices_ = 0;
+    num_of_max_vertices_ = 0;
     last_ = glm::vec3();
 }
 
@@ -96,27 +109,27 @@ void Batch::render() const {
         0,                  // stride
         (void*)0            // array buffer offset
     );
-    glUseProgram(shader_);
-    glDrawArrays(mode_, 0, static_cast<int>(num_of_used_vertices_));
+    glUseProgram(config_.shader);
+    glDrawArrays(config_.mode, 0, 1)/*static_cast<int>(num_of_used_vertices_))*/;
     glUseProgram(0);
     glDisableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
-bool Batch::add(std::vector<glm::vec3>& vec) {
+bool Batch::load(std::vector<glm::vec3>& vec) {
 
     if(vec.empty()) {
-        WIND_LOG_WARN(WIND::LogManager::get_default_console_logger(),
+        WIND_LOG_WARN(DEFAULT_WIND_LOGGER,
                       "empty vertes!");
         return true;
     }
 
-    size_t num_extra_ver = mode_ == GL_TRIANGLE_STRIP ? 2 : 0;
+    size_t num_extra_ver = config_.mode == GL_TRIANGLE_STRIP ? 2 : 0;
 
     if(num_of_max_vertices_ <
             num_of_used_vertices_ + num_extra_ver + vec.size()) {
-        WIND_LOG_WARN(WIND::LogManager::get_default_console_logger(),
+        WIND_LOG_WARN(DEFAULT_WIND_LOGGER,
                       "batch has not enough space for vertes");
         return false;
     }
@@ -144,11 +157,55 @@ bool Batch::add(std::vector<glm::vec3>& vec) {
     glBindVertexArray(0);
     num_of_used_vertices_ += num_extra_ver + vec.size();
     last_ = vec.back();
+    GLenum err = glGetError();
+    if(err != GL_NO_ERROR) {
+        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, gluErrorString(err));
+        exit(0);
+    }
 
     return true;
 }
 
 SWORD_END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

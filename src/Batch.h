@@ -20,6 +20,33 @@
 #include<glm/glm.hpp>
 
 SWORD_BEGIN
+struct BatchConfig {
+    uint32_t mode;
+    uint32_t draw_type;
+    uint32_t shader;
+
+    bool operator >(const BatchConfig& rhs)const {
+        if(mode > rhs.mode) return true;
+        else if(mode == rhs.mode && draw_type > rhs.draw_type) return true;
+        else if(mode == rhs.mode && draw_type == rhs.draw_type && shader > rhs.shader) return true;
+        return false;
+    }
+    bool operator <(const BatchConfig& rhs)const {
+        return !(*this == rhs || *this > rhs);
+    }
+
+    bool operator ==(const BatchConfig& rhs)const {
+        return mode == rhs.mode
+               && draw_type == rhs.draw_type
+               && shader == rhs.shader;
+    }
+
+    bool operator !=(const BatchConfig& rhs)const {
+        return !(*this == rhs);
+    }
+
+};
+
 
 class SWORD_EXPORT Batch {
   private:
@@ -27,40 +54,61 @@ class SWORD_EXPORT Batch {
     size_t num_of_used_vertices_;
     uint32_t vao_;
     uint32_t vbo_;
-    uint32_t mode_;
-    uint32_t draw_type_;
-    uint32_t shader_;
 
     glm::vec3 last_;
+    BatchConfig config_;
+
 
   public:
     Batch(uint32_t mode,
           uint32_t draw_type,
           uint32_t shader = 0,
-          size_t num_of_max_vertices = 1024);
+          size_t vertices_limit = 1024);
+
+    Batch(BatchConfig& config, size_t vertices_limit = 1024);
+
+    ~Batch();
 
     void init(uint32_t mode,
               uint32_t draw_type,
               uint32_t shader = 0,
-              size_t num_of_max_vertices = 1024);
+              size_t vertices_limit = 1024);
 
-    void resetUsedVertices();
+    void init (BatchConfig& config, size_t vertices_limit = 1024);
 
     inline bool empty() {
         return num_of_used_vertices_ == 0;
     }
 
-    void clean();
+    inline bool uninited() {
+        return num_of_max_vertices_ == 0;
+    }
+
+    void deinit();
     //void setVertexAttribPoint(int attribute = 0, int size = 3);
     void render()const;
 
-    bool add(std::vector<glm::vec3>& pos);
+    bool load(std::vector<glm::vec3>& pos);
+
+    void unload();
 
 };
 
 SWORD_END
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

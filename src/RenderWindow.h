@@ -18,6 +18,9 @@ class SDL_Window;
 
 SWORD_BEGIN
 
+// this class is a wrap for SDL_Window,
+// using it instead of SDL_HideWindow,SDL_GetWinSize,etc
+
 class SWORD_EXPORT RenderWindow {
   public:
     RenderWindow();
@@ -39,6 +42,8 @@ class SWORD_EXPORT RenderWindow {
 };
 
 SWORD_END
+
+
 
 
 

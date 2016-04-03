@@ -1,11 +1,11 @@
 #include"Application.h"
-#include<GL/gl.h>
+#include<GL/glew.h>
 #include"shader.hpp"
-#include<iostream>
+#include"LogManager.h"
 #include<glm/glm.hpp>
 Application::Application()
     : quit_(false),
-      use_msaa_(true) , {
+      use_msaa_(true) {
     root_ = new SWORD::Root;
 }
 
@@ -34,8 +34,7 @@ void Application::update(float d) {
 }
 void Application::run() {
 
-    WIND_LOG_TRACE(WIND::LogManager::get_default_console_logger(),
-                   "start render");
+    WIND_LOG_TRACE(DEFAULT_WIND_LOGGER, "start render");
 
     glEnable(GL_MULTISAMPLE);
     glPointSize(10);
@@ -52,8 +51,6 @@ void Application::run() {
         update(timer_.sinceLastTick());
         render(timer_.sinceLastTick());
         showFPS(timer_.sinceLastTick());
-        //batch_mgr_.cleanDynamicBatch();
-        root_->get_batch_manager()->resetDynamicBatchVertex();
         root_->swapBuffer();
     }
     destroySince();
@@ -78,12 +75,11 @@ void Application::createSince() {
     uint32_t proId = LoadShaders( "SimpleVertexShader.glsl", "SimpleFragmentShader.glsl" );
     //uint32_t matId = glGetUniformLocation(proId, "MVP");
     //glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-
     std::vector<glm::vec3> vec = {glm::vec3(-0.5, -0.5, 0.0),
                                   glm::vec3(0.0, 0.5, 0.0),
                                   glm::vec3(0.5, -0.5, 0.0)
                                  };
-    root_->get_batch_manager()->addToStaticBatch(vec, GL_POINTS, GL_STATIC_DRAW, proId);
+    root_->get_batch_manager()->addToStaticBatch(vec, GL_POINTS, GL_STATIC_DRAW, 0);
 }
 
 void Application::destroySince() {
@@ -93,13 +89,17 @@ void Application::destroySince() {
                    " batchs in Application");
 
     root_->get_batch_manager()->destroyAllBatch();
-    std::cout << bezier_curve_.size() << std::endl;
 }
 
 void Application::render(float diff) {
     (void)(diff);
     root_->get_batch_manager()->drawAllBatch();
 }
+
+
+
+
+
 
 
 

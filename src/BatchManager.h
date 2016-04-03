@@ -1,34 +1,23 @@
+/*=================================================================
+#
+# Copyright 2016-2020
+#
+# Author: luoyi 844262725@qq.com
+#
+# Last modified: 2016-04-03 16:56
+#
+# Filename: BatchManager.h
+#
+# Description:
+#
+==================================================================*/
+
+#ifndef SWORD_BATCHMANAGER_H_
+#define SWORD_BATCHMANAGER_H_
 #include"Batch.h"
 #include<map>
 
 SWORD_BEGIN
-
-struct BatchConfig {
-    uint32_t mode;
-    uint32_t draw_type;
-    uint32_t shader;
-
-    bool operator >(const BatchConfig& rhs)const {
-        if(mode > rhs.mode) return true;
-        else if(mode == rhs.mode && draw_type > rhs.draw_type) return true;
-        else if(mode == rhs.mode && draw_type == rhs.draw_type && shader > rhs.shader) return true;
-        return false;
-    }
-    bool operator <(const BatchConfig& rhs)const {
-        return !(*this == rhs || *this > rhs);
-    }
-
-    bool operator ==(const BatchConfig& rhs)const {
-        return mode == rhs.mode
-               && draw_type == rhs.draw_type
-               && shader == rhs.shader;
-    }
-
-    bool operator !=(const BatchConfig& rhs)const {
-        return !(*this == rhs);
-    }
-
-};
 
 
 class SWORD_EXPORT BatchManager {
@@ -45,17 +34,28 @@ class SWORD_EXPORT BatchManager {
 
     void drawAllBatch();
 
-    void cleanAllBatch();
-
+    // destroy all batch，clear static_list and dynamic_list,
+    // all vertex and config infomation will be lost,
+    // nothing will be drawing if you don't load new vertex
     void destroyAllBatch();
 
+    // unload all vertexs in static batch ,but
+    // the member static_batch_list_ won't be clear,
+    // just set the num of used vertex to zero;
     void cleanStaticBatch();
 
+    // unload all vertexs in dynamic batch ,but
+    // the member dynamic_batch_list_ won't be clear,
+    // just set the num of used vertex to zero;
+    // thid method will be call when Root swapBuffer(every frame)
     void cleanDynamicBatch();
 
-    void resetDynamicBatchVertex();
+    // the dynamic_batch_list_ will erase the batch which is empty
+    void removeEmptyDynamicBatch();
 
-    void removeExtraEmptyDynamicBatch();
+    inline void cleanAllBatch() {
+        cleanStaticBatch(), cleanDynamicBatch();
+    }
 
     inline size_t get_num_of_batch()const {
         return static_batch_list_.size() + dynamic_batch_list_.size();
@@ -71,6 +71,17 @@ class SWORD_EXPORT BatchManager {
 };
 
 SWORD_END
+
+
+#endif
+
+
+
+
+
+
+
+
 
 
 
