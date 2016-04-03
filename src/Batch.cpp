@@ -31,10 +31,6 @@ Batch::Batch(BatchConfig& config, size_t vertices_limit)
     init(config, vertices_limit);
 }
 
-Batch::~Batch() {
-    deinit();
-}
-
 void Batch::unload() {
     num_of_used_vertices_ = 0;
     last_ = glm::vec3();
@@ -109,9 +105,9 @@ void Batch::render() const {
         0,                  // stride
         (void*)0            // array buffer offset
     );
-    glUseProgram(config_.shader);
-    glDrawArrays(config_.mode, 0, 1)/*static_cast<int>(num_of_used_vertices_))*/;
-    glUseProgram(0);
+    //glUseProgram(config_.shader);
+    glDrawArrays(config_.mode, 0, static_cast<GLsizei>(num_of_used_vertices_));
+    //glUseProgram(0);
     glDisableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -157,6 +153,7 @@ bool Batch::load(std::vector<glm::vec3>& vec) {
     glBindVertexArray(0);
     num_of_used_vertices_ += num_extra_ver + vec.size();
     last_ = vec.back();
+
     GLenum err = glGetError();
     if(err != GL_NO_ERROR) {
         WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, gluErrorString(err));
@@ -167,96 +164,6 @@ bool Batch::load(std::vector<glm::vec3>& vec) {
 }
 
 SWORD_END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

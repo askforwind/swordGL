@@ -67,8 +67,6 @@ class SWORD_EXPORT Batch {
 
     Batch(BatchConfig& config, size_t vertices_limit = 1024);
 
-    ~Batch();
-
     void init(uint32_t mode,
               uint32_t draw_type,
               uint32_t shader = 0,

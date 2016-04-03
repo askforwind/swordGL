@@ -18,7 +18,11 @@
 #include "Log.h"
 namespace WIND {
 
-#define DEFAULT_WIND_LOGGER WIND::LogManager::get_default_logger()
+#if defined(_WIN32)
+#   define DEFAULT_WIND_LOGGER WIND::LogManager::get_default_file_logger()
+#else
+#   define DEFAULT_WIND_LOGGER WIND::LogManager::get_default_console_logger()
+#endif
 
 class WIND_EXPORT LogManager {
   public:
@@ -28,14 +32,6 @@ class WIND_EXPORT LogManager {
     static WindLogger& get_default_console_logger();
     static WindLogger& get_default_file_logger();
     static void set_format(WindShareAppendePtr appender, const LogString& format);
-
-    static WindLogger& get_default_logger() {
-#if defined(_WIN32)
-        return default_file_logger_;
-#else
-        return default_console_logger_;
-#endif
-    }
 
     static LogString set_default_console_logger_format(const LogString& format);
     static LogString set_default_file_logger_format(const LogString& format);
@@ -55,6 +51,7 @@ class WIND_EXPORT LogManager {
 
 
 #endif   // WIND7_SRC_LOGMANAGER_H_
+
 
 
 

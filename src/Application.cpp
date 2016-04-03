@@ -3,6 +3,8 @@
 #include"shader.hpp"
 #include"LogManager.h"
 #include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+
 Application::Application()
     : quit_(false),
       use_msaa_(true) {
@@ -73,13 +75,62 @@ void Application::createSince() {
     WIND_LOG_TRACE(WIND::LogManager::get_default_console_logger(),
                    "start create since");
     uint32_t proId = LoadShaders( "SimpleVertexShader.glsl", "SimpleFragmentShader.glsl" );
-    //uint32_t matId = glGetUniformLocation(proId, "MVP");
-    //glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-    std::vector<glm::vec3> vec = {glm::vec3(-0.5, -0.5, 0.0),
-                                  glm::vec3(0.0, 0.5, 0.0),
-                                  glm::vec3(0.5, -0.5, 0.0)
-                                 };
-    root_->get_batch_manager()->addToStaticBatch(vec, GL_POINTS, GL_STATIC_DRAW, 0);
+    int32_t matId = glGetUniformLocation(proId, "MVP");
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::mat4 view = glm::lookAt(
+                         glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
+                         glm::vec3(0, 0, 0), // and looks at the origin
+                         glm::vec3(0, 1, 0) // Head is up (set to 0,-1,0 to look upside-down)
+                     );
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 mvp = projection * view * model;
+    glUseProgram(proId);
+    glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
+    glm::vec3 s = {1.0, 2.0, 3.0};
+    std::vector<glm::vec3> vec = {{ -1.0f, -1.0f, -1.0f}, // triangle 1 : begin
+        { -1.0f, -1.0f, 1.0f},
+        { -1.0f, 1.0f, 1.0f}, // triangle 1 : end
+        { 1.0f, 1.0f, -1.0f}, // triangle 2 : begin
+        {        -1.0f, -1.0f, -1.0f},
+        {       -1.0f, 1.0f, -1.0f}, // triangle 2 : end
+        {      1.0f, -1.0f, 1.0f},
+        {     -1.0f, -1.0f, -1.0f},
+        {    1.0f, -1.0f, -1.0f},
+        {   1.0f, 1.0f, -1.0f},
+        {  1.0f, -1.0f, -1.0f},
+        { -1.0f, -1.0f, -1.0f},
+        {            -1.0f, -1.0f, -1.0f},
+        {             -1.0f, 1.0f, 1.0f},
+        {              -1.0f, 1.0f, -1.0f},
+        {           1.0f, -1.0f, 1.0f},
+        {               -1.0f, -1.0f, 1.0f},
+        {                -1.0f, -1.0f, -1.0f},
+        {                 -1.0f, 1.0f, 1.0f},
+        {                  -1.0f, -1.0f, 1.0f},
+        {                   1.0f, -1.0f, 1.0f},
+        {                    1.0f, 1.0f, 1.0f},
+        {                     1.0f, -1.0f, -1.0f},
+        {                      1.0f, 1.0f, -1.0f},
+        {                       1.0f, -1.0f, -1.0f},
+        {                        1.0f, 1.0f, 1.0f},
+        {                         1.0f, -1.0f, 1.0f},
+        {                          1.0f, 1.0f, 1.0f},
+        {                           1.0f, 1.0f, -1.0f},
+        {                            -1.0f, 1.0f, -1.0f},
+        {                             1.0f, 1.0f, 1.0f},
+        {                              -1.0f, 1.0f, -1.0f},
+        {                               -1.0f, 1.0f, 1.0f},
+        {                                1.0f, 1.0f, 1.0f},
+        {                                 -1.0f, 1.0f, 1.0f},
+        {                                  1.0f, -1.0f, 1.0f}
+    };
+    GLenum err = glGetError();
+    if(err != GL_NO_ERROR) {
+        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, gluErrorString(err));
+        exit(0);
+    }
+
+    root_->get_batch_manager()->addToStaticBatch(vec, GL_TRIANGLE_STRIP, GL_STATIC_DRAW, proId);
 }
 
 void Application::destroySince() {
@@ -95,6 +146,18 @@ void Application::render(float diff) {
     (void)(diff);
     root_->get_batch_manager()->drawAllBatch();
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

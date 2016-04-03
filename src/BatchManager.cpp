@@ -63,7 +63,12 @@ void BatchManager::drawAllBatch() {
 }
 
 void BatchManager::destroyAllBatch() {
+
+    for(std::pair<const BatchConfig, Batch>& i : static_batch_list_)
+        i.second.deinit();
     static_batch_list_.clear();
+    for(std::pair<const BatchConfig, Batch>& i : dynamic_batch_list_)
+        i.second.deinit();
     dynamic_batch_list_.clear();
 }
 
@@ -78,6 +83,8 @@ void BatchManager::cleanDynamicBatch() {
         i.second.unload();
 }
 SWORD_END
+
+
 
 
 
