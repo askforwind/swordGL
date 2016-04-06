@@ -1,5 +1,6 @@
 #include"Root.h"
 #include"LogManager.h"
+#include<FreeImage.h>
 #include<GL/glew.h>
 #include<SDL2/SDL.h>
 
@@ -14,22 +15,45 @@ Root::Root()
 Root::~Root() {
     destroyRenderWindow();
     SDL_Quit();
+    FreeImage_DeInitialise();
 }
 
 void Root::init() {
+    //---------init log4cplus-----------
     WIND::LogManager::initialize();
     WIND::LogManager::set_default_console_logger_format(
-        WIND_LOG_TEXT("%D{%H:%M:%S} %p: %m in %M\n"));
+        WIND_LOG_TEXT("%D{%H:%M:%S} %p: %m in %M %L\n"));
     WIND::LogManager::set_default_file_logger_format(
-        WIND_LOG_TEXT("%D{%H:%M:%S} %p: %m in %M\n"));
+        WIND_LOG_TEXT("%D{%H:%M:%S} %p: %m in %M %L\n"));
 
+    //---------init SDL2----------------
     if(SDL_Init(SDL_INIT_EVERYTHING) < 0) {
         WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, SDL_GetError());
         exit(0);
     }
 
+    //---------init FreeImage----------
+    FreeImage_Initialise();
+    FreeImage_SetOutputMessage(
+    [](FREE_IMAGE_FORMAT fif, const char* message)->void {
+        std::string old_console_format = WIND::LogManager::
+        set_default_console_logger_format("%D{%H:%M:%S} %p: %m\n");
+        std::string old_file_format = WIND::LogManager::
+        set_default_file_logger_format("%D{%H:%M:%S} %p: %m\n");
+
+        std::string error = "Image Error:";
+        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
+        error
+        + FreeImage_GetFormatFromFIF(fif)
+        + " " + message);
+
+        WIND::LogManager::set_default_console_logger_format(old_console_format);
+        WIND::LogManager::set_default_file_logger_format(old_file_format);
+    });
+    // create Render Window,and glcontext
     createRenderWindow();
 
+    //---------init glew after create Render Window---
     glewExperimental = true; // Needed for core profile
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
@@ -72,6 +96,19 @@ void Root::destroyRenderWindow() {
 }
 
 SWORD_END
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
