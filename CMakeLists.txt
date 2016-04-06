@@ -24,7 +24,9 @@ set(SRC ./src/Platform.h
     ./src/Math.h
     ./src/Math.cpp
     ./src/Root.h
-    ./src/Root.cpp)
+    ./src/Root.cpp
+    ./src/Texture.cpp
+    ./src/Texture.h)
 
 
 
@@ -32,4 +34,4 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_part/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_part/build/)
 
 add_executable(newWin  ${SRC})
-target_link_libraries(newWin WindLog GL X11 GLU log4cplus SDL2 GLEW)
+target_link_libraries(newWin WindLog GL X11 GLU log4cplus SDL2 GLEW freeimage)
