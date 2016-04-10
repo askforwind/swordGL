@@ -1,7 +1,6 @@
 #include"Batch.h"
 #include"LogManager.h"
 #include<GL/glew.h>
-#include<GL/glext.h>
 #include<cassert>
 
 SWORD_BEGIN

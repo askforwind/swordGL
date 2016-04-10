@@ -14,22 +14,25 @@
 #ifndef SWORD_PLATFORM_H_
 #define SWORD_PLATFORM_H_
 
+
 #if defined(__WIN32__)|| defined (_WIN32)
-#   define SWORD_PLANTFORM_WIN
+#   define SWORD_PLATFORM_WIN
+#	include<Windows.h>
 #else
-#   define SWORD_PLANTFORM_LINUX
+#   define SWORD_PLATFORM_LINUX
 #endif
 
 #ifdef SWORD_PLATFORM_WIN
 // BUILD_DLL was defined by VS ,or not
-#   if defined BUILD_DLL
+#   if defined SwordDependence_EXPORTS
 #       define SWORD_EXPORT  __declspec(dllexport)
 #   else
-#       define SWORD_EXPORT  __declspec(dllimport)
+#       define SWORD_EXPORT  //__declspec(dllimport)
 #   endif
 #else
 #   define SWORD_EXPORT
 #endif
+
 
 #if defined(_DEBUG)||defined(DEBUG)
 #   define SWORD_DEBUG_MODE 1

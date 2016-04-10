@@ -1,6 +1,6 @@
 #include"Application.h"
 #include<SDL2/SDL_events.h>
-#include<GL/gl.h>
+#include<GL/glew.h>
 #include"Math.h"
 #include"LogManager.h"
 #include<iostream>

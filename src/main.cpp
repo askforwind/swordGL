@@ -79,7 +79,7 @@ unsigned short g_idx[] = { 0, 1, 2,   0, 2, 3,
                            20, 21, 22,   20, 22, 23,
                          };
 
-int main() {
+int main(int argc,char*argv[]) {
     SWORD::Root root;
     uint32_t proId = LoadShaders("SimpleVertexShader.glsl", "SimpleFragmentShader.glsl");
     int32_t matId = glGetUniformLocation(proId, "MVP");

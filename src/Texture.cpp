@@ -4,8 +4,10 @@
 #include<string>
 #include<GL/glew.h>
 #include<cassert>
+#include<algorithm>
 
-#include<iostream>
+using std::max;
+
 SWORD_BEGIN
 
 uint8_t Texture::default_mipmap_num_ = 4;
@@ -77,7 +79,7 @@ void Texture::createTexture(uint8_t* data,
         break;
     case FIC_RGBALPHA:
         texture_format_ = GL_BGRA;
-#if __GLEW_EXT_texture_compression_s3tc
+#if GL_EXT_texture_compression_s3tc
         inte_format_ = compress ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_RGBA;
 #else
         inte_format_ = compress ? GL_COMPRESSED_RGBA : GL_RGBA;
@@ -122,8 +124,8 @@ void Texture::setMipmapAuto(uint8_t max_level, uint8_t start_level) {
     uint8_t mip_lv = 0;
     while(mip_lv < start_level) {
         mip_lv++;
-        w = std::max(1, w / 2);
-        h = std::max(1, h / 2);
+        w = max(1, w / 2);
+        h = max(1, h / 2);
     }
 
     for(; mip_lv <= max_level; ++mip_lv) {
@@ -131,8 +133,8 @@ void Texture::setMipmapAuto(uint8_t max_level, uint8_t start_level) {
                                     inte_format_, w, h, 0,
                                     texture_format_, GL_UNSIGNED_BYTE, NULL));
 
-        w = std::max(1, w / 2);
-        h = std::max(1, h / 2);
+        w = max(1, w / 2);
+        h = max(1, h / 2);
     }
 
     CHECK_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
