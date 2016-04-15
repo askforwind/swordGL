@@ -65,7 +65,7 @@ void Application::showFPS(float diff) {
     time_since_last_second += diff;
 
     if(time_since_last_second >= 1000.0f) {
-        root_->get_defaule_render_window()->set_title(std::to_string(fps).c_str());
+        root_->get_render_window()->set_title(std::to_string(fps).c_str());
         time_since_last_second = 0.0f;
         fps = 0;
     }

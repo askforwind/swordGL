@@ -31,7 +31,7 @@ void Application::mouseReleased(const SDL_MouseButtonEvent& arg ) {
 void Application::mousePressed(const SDL_MouseButtonEvent& arg) {
     if(arg.button == SDL_BUTTON_LEFT) {
 
-        SWORD::RenderWindow* win = root_->get_defaule_render_window();
+        SWORD::RenderWindow* win = root_->get_render_window();
         if(!win) return;
 
         int win_width, win_height;

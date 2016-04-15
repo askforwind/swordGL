@@ -9,13 +9,27 @@ RenderWindow::RenderWindow()
       fullscreen_(false),
       win_(0) {}
 
+RenderWindow::~RenderWindow() {
+	if (win_) SDL_DestroyWindow(win_);
+	win_ = 0;
+}
+
 void RenderWindow::attach(SDL_Window* win) {
     win_ = win;
+}
+
+SDL_Window * RenderWindow::get_win_handle() {
+	return this->win_;
 }
 
 void RenderWindow::set_title(const char* title) {
     assert(win_);
     SDL_SetWindowTitle(win_, title);
+}
+
+void RenderWindow::set_win_size(const int & width,const int & height) {
+	assert(win_);
+	SDL_SetWindowSize(win_, width, height);
 }
 
 void RenderWindow::set_visible(bool visable) {

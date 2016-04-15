@@ -14,8 +14,8 @@ class SWORD_EXPORT Root {
 // that mean you must set the vertex to the batch every frame
 // or set it to the static frame,if they won't changes;
     inline void swapBuffer() {
-        assert(win_);
-        SDL_GL_SwapWindow(win_);
+        assert(render_window_.get_win_handle());
+        SDL_GL_SwapWindow(render_window_.get_win_handle());
         batch_manager_.cleanDynamicBatch();
     }
 
@@ -23,7 +23,7 @@ class SWORD_EXPORT Root {
         return &batch_manager_;
     }
 
-    inline RenderWindow* get_defaule_render_window() {
+    inline RenderWindow* get_render_window() {
         return &render_window_;
     }
 
@@ -39,7 +39,7 @@ class SWORD_EXPORT Root {
     void destroyRenderWindow();
 
     RenderWindow render_window_;
-    SDL_Window* win_;
+  
     SDL_GLContext context_;
 
     BatchManager batch_manager_;

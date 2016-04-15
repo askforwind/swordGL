@@ -33,8 +33,30 @@ set(SRC ./src/Platform.h
     ./src/Root.cpp
     ./src/Texture.cpp
     ./src/Texture.h
-    ./dependence/LogManager.cpp)
+	./src/config.h
+    ./dependence/LogManager.cpp
+	./src/Camera.h
+	./src/Camera.cpp
+	./src/Node.h
+	./src/Node.cpp
+	./src/FPSCamera.h
+	./src/FPSCamera.cpp
+	./src/Mesh.h
+	./src/Mesh.cpp
+	./src/Material.h
+	./src/Material.cpp)
 
+
+set(CHECK_OPENGL_FUNCTION 1)
+
+set(SWORD_RELEASE 0)
+
+ADD_DEFINITIONS(-DSWORD_BUILD_SHARE)
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/Dependence/include/precompile.h.in"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Dependence/include/precompile.h"
+)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -49,13 +71,12 @@ find_package(SDL REQUIRED )
 find_package(FreeImage REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
-
+find_package(ASSIMP REQUIRED)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Dependence/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Dependence)
 
 set(LIBS ${LIBS} ${LOG4CPLUS_LIBRARY} ${SDL_LIBRARY} ${FREEIMAGE_LIBRARY}
-		${GLEW_LIBRARY} ${OPENGL_LIBRARY})
+		${GLEW_LIBRARY} ${OPENGL_LIBRARY} ${ASSIMP_LIBRARY} ${SDLMAIN_LIBRARY})
 
 add_executable(sword  ${SRC})
 target_link_libraries(sword  ${LIBS})

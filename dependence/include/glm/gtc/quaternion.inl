@@ -51,25 +51,47 @@ namespace detail
 
 	// -- Component accesses --
 
-	template <typename T, precision P>
-	GLM_FUNC_QUALIFIER GLM_CONSTEXPR typename tquat<T, P>::length_type tquat<T, P>::length() const
-	{
-		return 4;
-	}
+#	ifdef GLM_FORCE_SIZE_FUNC
+		template <typename T, precision P>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR typename tquat<T, P>::size_type tquat<T, P>::size() const
+		{
+			return 4;
+		}
 
-	template <typename T, precision P>
-	GLM_FUNC_QUALIFIER T & tquat<T, P>::operator[](typename tquat<T, P>::length_type i)
-	{
-		assert(i >= 0 && i < this->length());
-		return (&x)[i];
-	}
+		template <typename T, precision P>
+		GLM_FUNC_QUALIFIER T & tquat<T, P>::operator[](typename tquat<T, P>::size_type i)
+		{
+			assert(i >= 0 && static_cast<detail::component_count_t>(i) < detail::component_count(*this));
+			return (&x)[i];
+		}
 
-	template <typename T, precision P>
-	GLM_FUNC_QUALIFIER T const & tquat<T, P>::operator[](typename tquat<T, P>::length_type i) const
-	{
-		assert(i >= 0 && i < this->length());
-		return (&x)[i];
-	}
+		template <typename T, precision P>
+		GLM_FUNC_QUALIFIER T const & tquat<T, P>::operator[](typename tquat<T, P>::size_type i) const
+		{
+			assert(i >= 0 && static_cast<detail::component_count_t>(i) < detail::component_count(*this));
+			return (&x)[i];
+		}
+#	else
+		template <typename T, precision P>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR typename tquat<T, P>::length_type tquat<T, P>::length() const
+		{
+			return 4;
+		}
+
+		template <typename T, precision P>
+		GLM_FUNC_QUALIFIER T & tquat<T, P>::operator[](typename tquat<T, P>::length_type i)
+		{
+			assert(i >= 0 && static_cast<detail::component_count_t>(i) < detail::component_count(*this));
+			return (&x)[i];
+		}
+
+		template <typename T, precision P>
+		GLM_FUNC_QUALIFIER T const & tquat<T, P>::operator[](typename tquat<T, P>::length_type i) const
+		{
+			assert(i >= 0 && static_cast<detail::component_count_t>(i) < detail::component_count(*this));
+			return (&x)[i];
+		}
+#	endif//GLM_FORCE_SIZE_FUNC
 
 	// -- Implicit basic constructors --
 
@@ -717,7 +739,7 @@ namespace detail
 	GLM_FUNC_QUALIFIER tvec4<bool, P> lessThan(tquat<T, P> const & x, tquat<T, P> const & y)
 	{
 		tvec4<bool, P> Result(uninitialize);
-		for(length_t i = 0; i < x.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(x); ++i)
 			Result[i] = x[i] < y[i];
 		return Result;
 	}
@@ -726,7 +748,7 @@ namespace detail
 	GLM_FUNC_QUALIFIER tvec4<bool, P> lessThanEqual(tquat<T, P> const & x, tquat<T, P> const & y)
 	{
 		tvec4<bool, P> Result(uninitialize);
-		for(length_t i = 0; i < x.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(x); ++i)
 			Result[i] = x[i] <= y[i];
 		return Result;
 	}
@@ -735,7 +757,7 @@ namespace detail
 	GLM_FUNC_QUALIFIER tvec4<bool, P> greaterThan(tquat<T, P> const & x, tquat<T, P> const & y)
 	{
 		tvec4<bool, P> Result(uninitialize);
-		for(length_t i = 0; i < x.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(x); ++i)
 			Result[i] = x[i] > y[i];
 		return Result;
 	}
@@ -744,7 +766,7 @@ namespace detail
 	GLM_FUNC_QUALIFIER tvec4<bool, P> greaterThanEqual(tquat<T, P> const & x, tquat<T, P> const & y)
 	{
 		tvec4<bool, P> Result(uninitialize);
-		for(length_t i = 0; i < x.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(x); ++i)
 			Result[i] = x[i] >= y[i];
 		return Result;
 	}
@@ -753,7 +775,7 @@ namespace detail
 	GLM_FUNC_QUALIFIER tvec4<bool, P> equal(tquat<T, P> const & x, tquat<T, P> const & y)
 	{
 		tvec4<bool, P> Result(uninitialize);
-		for(length_t i = 0; i < x.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(x); ++i)
 			Result[i] = x[i] == y[i];
 		return Result;
 	}
@@ -762,7 +784,7 @@ namespace detail
 	GLM_FUNC_QUALIFIER tvec4<bool, P> notEqual(tquat<T, P> const & x, tquat<T, P> const & y)
 	{
 		tvec4<bool, P> Result(uninitialize);
-		for(length_t i = 0; i < x.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(x); ++i)
 			Result[i] = x[i] != y[i];
 		return Result;
 	}

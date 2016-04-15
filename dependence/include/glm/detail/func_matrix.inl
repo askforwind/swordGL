@@ -270,7 +270,7 @@ namespace detail
 		GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559, "'matrixCompMult' only accept floating-point inputs");
 
 		matType<T, P> result(uninitialize);
-		for(length_t i = 0; i < result.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(result); ++i)
 			result[i] = x[i] * y[i];
 		return result;
 	}
@@ -281,7 +281,7 @@ namespace detail
 		GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559, "'outerProduct' only accept floating-point inputs");
 
 		typename detail::outerProduct_trait<T, P, vecTypeA, vecTypeB>::type m(uninitialize);
-		for(length_t i = 0; i < m.length(); ++i)
+		for(detail::component_count_t i = 0; i < detail::component_count(m); ++i)
 			m[i] = c * r[i];
 		return m;
 	}

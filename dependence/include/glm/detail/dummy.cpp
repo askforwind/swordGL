@@ -32,7 +32,7 @@
 /// GLM is a header only library. There is nothing to compile. 
 /// dummy.cpp exist only a wordaround for CMake file.
 ///////////////////////////////////////////////////////////////////////////////////
-/*
+
 #define GLM_MESSAGES
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
@@ -149,8 +149,6 @@ struct intersection
 	glm::vec4 position;
 	glm::vec3 normal;
 };
-*/
-
 
 /*
 // Sample 4
@@ -193,7 +191,7 @@ glm::vec3 lighting
 }
 */
 
-/*
+
 template <typename T, glm::precision P, template<typename, glm::precision> class vecType>
 T normalizeDotA(vecType<T, P> const & x, vecType<T, P> const & y)
 {
@@ -213,10 +211,9 @@ typename vecType::value_type normalizeDotC(vecType const & a, vecType const & b)
 {
 	return glm::dot(a, b) * glm::inversesqrt(glm::dot(a, a) * glm::dot(b, b));
 }
-*/
+
 int main()
 {
-/*
 	glm::vec1 o(1);
 	glm::vec2 a(1);
 	glm::vec3 b(1);
@@ -230,6 +227,6 @@ int main()
 	float a0 = normalizeDotA(a, a);
 	float b0 = normalizeDotB(b, b);
 	float c0 = normalizeDotC(c, c);
-*/
+
 	return 0;
 }

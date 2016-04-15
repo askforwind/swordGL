@@ -8,12 +8,12 @@
 #
 # Filename: Platform.h
 #
-# Description: 
+# Description:
 #
 ==================================================================*/
 #ifndef SWORD_PLATFORM_H_
 #define SWORD_PLATFORM_H_
-
+#include "precompile.h"
 
 #if defined(__WIN32__)|| defined (_WIN32)
 #   define SWORD_PLATFORM_WIN
@@ -22,17 +22,22 @@
 #   define SWORD_PLATFORM_LINUX
 #endif
 
-#ifdef SWORD_PLATFORM_WIN
-// BUILD_DLL was defined by VS ,or not
-#   if defined SwordDependence_EXPORTS
+
+
+#if defined SWORD_PLATFORM_WIN
+
+#	if !SWORD_RELEASE
+#		define SWORD_EXPORT
+#   elif defined SWORD_BUILD_SHARE
 #       define SWORD_EXPORT  __declspec(dllexport)
-#   else
-#       define SWORD_EXPORT  //__declspec(dllimport)
+#   elif defined SWORD_BUILD_STATIC
+#       define SWORD_EXPORT
+#	
 #   endif
+
 #else
 #   define SWORD_EXPORT
 #endif
-
 
 #if defined(_DEBUG)||defined(DEBUG)
 #   define SWORD_DEBUG_MODE 1

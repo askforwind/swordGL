@@ -1,0 +1,4 @@
+#define CHECK_OPENGL_FUNCTION 1
+
+
+#define SWORD_RELEASE 0

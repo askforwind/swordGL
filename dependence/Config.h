@@ -11,8 +11,8 @@
 # Description: 
 #
 ==================================================================*/
-#ifndef WIND7_CONFIG_H_ 
-#define WIND7_CONFIG_H_
+#ifndef SWORD_DEPENDENCE_CONFIG_H_ 
+#define SWORD_DEPENDENCE_CONFIG_H_ 
 
 #include "Platform.h"
 

@@ -85,7 +85,7 @@ void Texture::createTexture(uint8_t* data,
         inte_format_ = compress ? GL_COMPRESSED_RGBA : GL_RGBA;
 #endif
         break;
-    default:
+    default:// TODO check it later
         texture_format_ = GL_BGR;
         inte_format_ = GL_LUMINANCE;
         break;

@@ -23,11 +23,16 @@ SWORD_BEGIN
 
 class SWORD_EXPORT RenderWindow {
   public:
-    RenderWindow();
+	RenderWindow();
+	~RenderWindow();
 
     void attach(SDL_Window* win);
 
+	SDL_Window* get_win_handle();
+
     void set_title(const char* title);
+
+	void set_win_size(const int& width,const int& height);
 
     void set_visible(bool visable);
 

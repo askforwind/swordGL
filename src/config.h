@@ -15,7 +15,7 @@
 #define SWORD_CONFIG_H_
 #include"Platform.h"
 
-#   if SWORD_DEBUG_MODE
+#   if CHECK_OPENGL_FUNCTION
 #      define CHECK_GL_ERROR(glFunc) \
 { \
     glFunc; \
