@@ -1,6 +1,5 @@
 #include"Root.h"
 #include"LogManager.h"
-#include<FreeImage.h>
 #include<GL/glew.h>
 #include<SDL2/SDL.h>
 
@@ -14,7 +13,6 @@ Root::Root()
 Root::~Root() {
     destroyRenderWindow();
     SDL_Quit();
-    FreeImage_DeInitialise();
 }
 
 void Root::init() {
@@ -31,24 +29,7 @@ void Root::init() {
         exit(-1);
     }
 
-    //---------init FreeImage----------
-    FreeImage_Initialise();
-    FreeImage_SetOutputMessage(
-    [](FREE_IMAGE_FORMAT fif, const char* message)->void {
-        std::string old_console_format = WIND::LogManager::
-        set_default_console_logger_format("%D{%H:%M:%S} %p: %m\n");
-        std::string old_file_format = WIND::LogManager::
-        set_default_file_logger_format("%D{%H:%M:%S} %p: %m\n");
-
-        std::string error = "Image Error:";
-        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-        error
-        + FreeImage_GetFormatFromFIF(fif)
-        + " " + message);
-
-        WIND::LogManager::set_default_console_logger_format(old_console_format);
-        WIND::LogManager::set_default_file_logger_format(old_file_format);
-    });
+   
     // create Render Window,and glcontext
     createRenderWindow();
 

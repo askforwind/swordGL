@@ -1,113 +1,94 @@
 #include<GL/glew.h>
 #include"Root.h"
 #include"shader.hpp"
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include"Texture.h"
+#include"FPSCamera.h"
+#include"ResourceGroup.h"
 #include<iostream>
-static const GLfloat g_vertex_buffer_data[] = {
-    -1.0f, -1.0f, -1.0f,
-    -1.0f, 1.0f, -1.0f,
-    1.0f, 1.0f, -1.0f,
-    1.0f, -1.0f, -1.0f,
+#include"SDL2\SDL_mouse.h"
 
-    -1.0f, -1.0f, 1.0f,
-    1.0f, -1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
+int32_t matId;
+SWORD::Root root;
+void mouseMove(const SDL_MouseMotionEvent &arg,SWORD::FPSCamera& c) {
+	float x_offset = 300 - arg.x;
+	float y_offset = 400 - arg.y;
+	c.moveMouse(x_offset, y_offset, 0.0001);
+	glm::mat4 mvp = c.get_matrix()*glm::mat4(1.0f);
+	glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
+	SDL_WarpMouseInWindow(root.get_render_window()->get_win_handle(), 300, 400);
+}
 
-    -1.0f, 1.0f, -1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, -1.0f,
-
-    -1.0, -1.0f, -1.0f,
-    1.0f, -1.0f, -1.0f,
-    1.0f, -1.0f, 1.0f,
-    -1.0f, -1.0f, 1.0f,
-
-    -1.0f, -1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, -1.0f,
-    -1.0f, -1.0f, -1.0f,
-
-    1.0f, -1.0f, -1.0f,
-    1.0f, 1.0f, -1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f, -1.0f, 1.0f,
-};
-/*
- *       /2------/|6
- *     3/|------/7|
- *      ||      | |
- *      |/0-----|-/4
- *      +1------+/5
- */
-
-static const GLfloat g_vertex_color_data[] = {
-    0.0, 1.0,    0.0, 0.0,
-    1.0, 0.0,    1.0, 1.0,
-
-    1.0, 1.0,    0.0, 1.0,
-    0.0, 0.0,    1.0, 0.0,
-
-    0.0, 1.0,    0.0, 0.0,
-    1.0, 0.0,    1.0, 1.0,
-
-    1.0, 1.0,    0.0, 1.0,
-    0.0, 0.0,    1.0, 0.0,
-
-    0.0, 1.0,    0.0, 0.0,
-    1.0, 0.0,    1.0, 1.0,
-
-    0.0, 1.0,    0.0, 0.0,
-    1.0, 0.0,    1.0, 1.0,
-};
-unsigned short g_idx[] = { 0, 1, 2,   0, 2, 3,
-                           4, 5, 6,   4, 6, 7,
-                           8, 9, 10,  8, 10, 11,
-                           12, 13, 14,   12, 14, 15,
-                           16, 17, 18,    16, 18, 19,
-                           20, 21, 22,   20, 22, 23,
-                         };
+void keyPress(const SDL_KeyboardEvent &arg, SWORD::FPSCamera& c) {
+	if (arg.keysym.sym == SDLK_w) {
+		c.forward(0.01);
+	}
+	if (arg.keysym.sym == SDLK_s) {
+		c.backward(0.01);
+	}
+	if (arg.keysym.sym == SDLK_a) {
+		c.moveLeft(0.01);
+	}
+	if (arg.keysym.sym == SDLK_d) {
+		c.moveRight(0.01);
+	}
+	glm::mat4 mvp = c.get_matrix()*glm::mat4(1.0f);
+	glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
+}
 
 int main(int argc,char*argv[]) {
-    SWORD::Root root;
-    uint32_t proId = LoadShaders("SimpleVertexShader.glsl", "SimpleFragmentShader.glsl");
-    int32_t matId = glGetUniformLocation(proId, "MVP");
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-    glm::mat4 view = glm::lookAt(
-                         glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
-                         glm::vec3(0, 0, 0), // and looks at the origin
-                         glm::vec3(0, 1, 0) // Head is up (set to 0,-1,0 to look upside-down)
-                     );
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 mvp = projection * view * model;
+   
+	SWORD::ResourceGroup mResource;
+	mResource.initialise();
+	SDL_WarpMouseInWindow(root.get_render_window()->get_win_handle(), 300, 400);
+	SDL_ShowCursor(0);
+	SWORD::FPSCamera mCamera;
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+	mCamera.set_clip_plane(0.1f, 100.0f);
+	mCamera.set_aspect(4.0f / 3.0f);
+	
+	
+	mCamera.set_position(glm::vec3(0, 0, 5));
+	mCamera.lookAt(glm::vec3(0, 0, 0));
+
+	glm::mat4 model = glm::mat4(1.0f);
+
+
+	glm::mat4 mvp = mCamera.get_matrix()*  model;
+	
+
+	uint32_t proId = LoadShaders("vs.glsl", "ps.glsl");
+
     glUseProgram(proId);
+	matId = glGetUniformLocation(proId, "MVP");
+	//glm::mat4 mvp = mCamera.get_matrix()*glm::mat4(1.0f);
     glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
+	int32_t  tex0 = glGetUniformLocation(proId, "tex0");
+    
+	SWORD::Texture* tex = mResource.loadTexture("t.png", "t");
+	SWORD::Module* mod = mResource.loadModule("cube.blend", "cube");
 
-    //uint32_t texID = loadTexture();
+	const SWORD::Mesh* mesh = mResource.get_mesh(mod->operator[](0));
+	const SWORD::Mesh::Info* info = mesh->get_info();
 
-    SWORD::Texture mTex;
-    mTex.load("t.bmp");
-
-    int32_t  tex0 = glGetUniformLocation(proId, "tex0");
     uint32_t elevao;
     glGenVertexArrays(1, &elevao);
     glBindVertexArray(elevao);
     uint32_t idxbuff;
     glGenBuffers(1, &idxbuff);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbuff);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g_idx), g_idx, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t)*info->index.size(),
+				 info->index.data(), GL_STATIC_DRAW);
+
     uint32_t verbuff;
     glGenBuffers(1, &verbuff);
     glBindBuffer(GL_ARRAY_BUFFER, verbuff);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*info->vertex.size(),
+				 info->vertex.data(), GL_STATIC_DRAW);
 
     uint32_t coloUV;
     glGenBuffers(1, &coloUV);
     glBindBuffer(GL_ARRAY_BUFFER, coloUV);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_color_data), g_vertex_color_data, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*info->uv.size(),
+				 info->uv.data(), GL_STATIC_DRAW);
 
 
     bool quit = false;
@@ -122,6 +103,10 @@ int main(int argc,char*argv[]) {
         case SDL_QUIT:
             quit = true;
             break;
+		case SDL_MOUSEMOTION:
+			mouseMove(evt.motion, mCamera);
+		case SDL_KEYDOWN:
+			keyPress(evt.key, mCamera);
         }
 
         glEnableVertexAttribArray(0);
@@ -135,24 +120,25 @@ int main(int argc,char*argv[]) {
             (void*)0            // array buffer offset
         );
 
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, coloUV);
-        glVertexAttribPointer(
-            1,
-            2,
-            GL_FLOAT,
-            GL_FALSE,
-            0,
-            (void*)0
-        );
+		  glEnableVertexAttribArray(1);
+		  glBindBuffer(GL_ARRAY_BUFFER, coloUV);
+		  glVertexAttribPointer(
+			  1,
+			  2,
+			  GL_FLOAT,
+			  GL_FALSE,
+			  0,
+			  (void*)0
+		  );
 
-        mTex.bindToActiveUnit(1);
+        tex->bindToActiveUnit(1);
         glUniform1i(tex0, 1);
         glDrawElements(GL_TRIANGLES,
-                       36, GL_UNSIGNED_SHORT, 0);
+                       info->index.size(), GL_UNSIGNED_SHORT, 0);
         root.swapBuffer();
     }
-    mTex.unload();
+	tex->unload();
+	mResource.deinitialise();
     glBindVertexArray(0);
     glDeleteProgram(proId);
     glDeleteBuffers(1, &verbuff);

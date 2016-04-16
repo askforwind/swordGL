@@ -23,7 +23,7 @@ Camera::Camera()
 	, position_(glm::vec3(0, 0, 5))
 	, up_(0.0f, 1.0f, 0.0f)
 	, view_filed_(glm::radians(45.0f))
-	, aspect_(0.75f)
+	, aspect_(4.0f/3.0f)
 	, near_clip_(0.1f)
 	, far_clip_(100.f){
 	updateProject();
@@ -41,8 +41,8 @@ void Camera::updateProject() {
 void SWORD::Camera::updateValue() {
 	glm::vec3 right = glm::cross(direction_, up_);
 	up_ = glm::cross(right, direction_);
-	glm::normalize(up_);
-	glm::normalize(direction_);
+	up_ = glm::normalize(up_);
+	direction_ = glm::normalize(direction_);
 }
 
 void Camera::set_clip_plane(float near_clip, float far_clip) {
@@ -67,8 +67,8 @@ void Camera::set_position(const glm::vec3& p) {
 	updateView();
 }
 
-const glm::mat4 & Camera::get_matrix() const {
-	return projection_ * view_;
+const glm::mat4 Camera::get_matrix() const {
+	return  projection_*view_;
 }
 
 void Camera::set_direction(const glm::vec3& d) {
@@ -112,7 +112,7 @@ void Camera::translate(const glm::vec3& v) {
 	updateView();
 }
 
-const glm::vec3& Camera::get_direction()const {
+const glm::vec3 Camera::get_direction()const {
 	return direction_;
 }
 

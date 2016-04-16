@@ -36,9 +36,9 @@ public:
 
 	void translate(const glm::vec3& v);
 
-	const glm::vec3& get_direction()const;
+	const glm::vec3 get_direction()const;
 
-	const glm::mat4& get_matrix()const;
+	const glm::mat4 get_matrix()const;
 
 private:
 	void updateView();

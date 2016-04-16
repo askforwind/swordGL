@@ -44,7 +44,9 @@ set(SRC ./src/Platform.h
 	./src/Mesh.h
 	./src/Mesh.cpp
 	./src/Material.h
-	./src/Material.cpp)
+	./src/Material.cpp
+	./src/ResourceGroup.h
+	./src/ResourceGroup.cpp)
 
 
 set(CHECK_OPENGL_FUNCTION 1)
