@@ -9,10 +9,10 @@ Material(){
 	info_.transparent = glm::vec3(1.0f);
 	info_.wireframe = false;
 	info_.twosided = false;
-	info_.texture_id[0] = "";
-	info_.texture_id[1] = "";
-	info_.texture_id[2] = "";
-	info_.texture_id[3] = "";
+	info_.tex_opacity[0] = "";
+	info_.tex_opacity[1] = "";
+	info_.tex_opacity[2] = "";
+	info_.tex_opacity[3] = "";
 }
 
 void SWORD::Material::
@@ -40,6 +40,11 @@ void SWORD::Material::set_twosided(bool b) {
 	info_.twosided = b;
 }
 
-void SWORD::Material::set_texture(std::string& id, uint8_t idx) {
+void SWORD::Material::set_opacity_tex(const std::string& id, uint8_t idx) {
+	assert(idx < 4);
+	info_.tex_opacity[idx] = id;
+}
 
+void SWORD::Material::set_diff_tex(const std::string & id) {
+	info_.tex_diff = id;
 }

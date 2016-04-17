@@ -25,7 +25,7 @@ Camera::Camera()
 	, view_filed_(glm::radians(45.0f))
 	, aspect_(4.0f/3.0f)
 	, near_clip_(0.1f)
-	, far_clip_(100.f){
+	, far_clip_(10000.f){
 	updateProject();
 	updateView();
 }
@@ -39,11 +39,17 @@ void Camera::updateProject() {
 }
 
 void SWORD::Camera::updateValue() {
-	glm::vec3 right = glm::cross(direction_, up_);
-	up_ = glm::cross(right, direction_);
+	//glm::vec3 right = glm::cross(direction_, up_);
+	//up_ = glm::cross(right, direction_);
 	up_ = glm::normalize(up_);
 	direction_ = glm::normalize(direction_);
 }
+
+//void Camera::set_up(const glm::vec3& u) {
+//	this->up_ = u;
+//	updateValue();
+//	updateView();
+//}
 
 void Camera::set_clip_plane(float near_clip, float far_clip) {
 	this->near_clip_ = near_clip;
@@ -77,43 +83,37 @@ void Camera::set_direction(const glm::vec3& d) {
 	updateView();
 }
 
-void Camera::forward(float unit) {
-	position_ += unit*direction_;
-	updateView();
-}
-
-void Camera::backward(float unit) {
-	position_ -= unit*direction_;
-	updateView();
-}
-
-void Camera::moveLeft(float unit) {
-	position_ -= unit*glm::normalize(glm::cross(direction_, up_));
-	updateView();
-}
-
-void Camera::moveRight(float unit) {
-	position_ += unit*glm::normalize(glm::cross(direction_, up_));
-	updateView();
-}
-
-void Camera::moveUp(float unit) {
-	position_ -= unit* up_;
-	updateView();
-}
-
-void Camera::moveDown(float unit) {
-	position_ += unit* up_;
-	updateView();
-}
 
 void Camera::translate(const glm::vec3& v) {
-	position_ += v*direction_;
+	position_ += v;
 	updateView();
 }
 
-const glm::vec3 Camera::get_direction()const {
+void Camera::yaw(const float radian) {
+	glm::vec4 center(position_ + direction_, 1.0f);
+	glm::mat4 r = glm::rotate(radian, glm::vec3(0.0f, 1.0f, 0.0f));
+	center = r*center;
+	lookAt(glm::vec3(center));
+}
+
+void Camera::pitch(const float radian) {
+	glm::vec4 center(position_ + direction_, 1.0f);
+	glm::mat4 r = glm::rotate(radian, glm::vec3(1.0f, 0.0f, 0.0f));
+	center = r*center;
+	lookAt(glm::vec3(center));
+}
+
+
+glm::vec3 Camera::get_direction()const {
 	return direction_;
+}
+
+glm::vec3 Camera::get_up()const {
+	return up_;
+}
+
+glm::vec3 Camera::get_right()const {
+	return glm::cross(direction_, up_);
 }
 
 SWORD_END

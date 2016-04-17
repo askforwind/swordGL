@@ -7,7 +7,6 @@ SWORD_BEGIN
 
 Root::Root()
     :context_(0) {
-    init();
 }
 
 Root::~Root() {

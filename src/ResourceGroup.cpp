@@ -118,9 +118,33 @@ Module* ResourceGroup::loadModule(const std::string& path,
 	return &r.first->second;
 }
 
+namespace {
+	void dumpMaterialTextureInfo(const aiMaterial* m,const std::string& id) {
+		
+		WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER, "material :" + id + " tex info");
+		for (int i = 0; i < 0xc; ++i) {
+			uint16_t k = m->GetTextureCount((aiTextureType)i);
+
+			if (k) {
+				aiString path("none");
+				m->GetTexture((aiTextureType)i, 0, &path);
+
+				WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER,
+							   "  " + std::to_string(i) + " " +
+							   std::to_string(k) + " " +
+							   path.C_Str());
+			}
+		}
+	}
+}
+
 void ResourceGroup::loadMaterial(const std::string& id, 
 								 const aiMaterial* m) {
 	
+	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER,
+				   "start load material,ID:" +
+				   id);
+
 	if (all_material_.find(id) != all_material_.end()) {
 		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
 					   "Could't load material,because the id:" +
@@ -141,6 +165,28 @@ void ResourceGroup::loadMaterial(const std::string& id,
 	if (m->Get(AI_MATKEY_COLOR_SPECULAR, c) == AI_SUCCESS) {
 		material.set_specular(glm::vec3(c.r, c.g, c.b));
 	}
+	
+	uint8_t num_tex_opacity = m->GetTextureCount(aiTextureType_OPACITY);
+	for (int i = 0; i < num_tex_opacity; i++) {
+		aiString tex_path;
+		m->GetTexture(aiTextureType_OPACITY, i, &tex_path);
+		std::string str = tex_path.C_Str();
+		std::string tex_id = id + "_opacity_tex_" + std::to_string(i);
+		loadTexture(str.substr(str.find_last_of('\\')+1),tex_id );
+		material.set_opacity_tex(tex_id, i);
+	}
+
+	if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+		aiString tex_path;
+		m->GetTexture(aiTextureType_DIFFUSE, 0, &tex_path);
+		std::string str = tex_path.C_Str();
+		std::string tex_id = id + "_diffuse_tex_" + std::to_string(0);
+		loadTexture(str.substr(str.find_last_of('\\') + 1), tex_id);
+		material.set_diff_tex(tex_id);
+	}
+
+	dumpMaterialTextureInfo(m, id);
+	
 	//TODO
 	
 }
@@ -148,6 +194,11 @@ void ResourceGroup::loadMaterial(const std::string& id,
 void ResourceGroup::loadMesh(const std::string& id,
 							 const aiMesh* m,
 							 const std::string& mat_id) {
+
+	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER,
+				   "start load mesh,ID:" +
+				   id);
+
 	if (all_mesh_.find(id) != all_mesh_.end()) {
 		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
 					   "Could't load mesh,because the id:" +
@@ -155,6 +206,7 @@ void ResourceGroup::loadMesh(const std::string& id,
 		return;
 	}
 
+	
 	auto r = all_mesh_.insert(std::make_pair(id, Mesh()));
 	Mesh& mesh = r.first->second;
 	mesh.set_material(mat_id);
@@ -199,15 +251,17 @@ void ResourceGroup::loadMesh(const std::string& id,
 		}
 	}
 	mesh.readUV(std::move(uv));
-
+	
 	//-------read normal----------;
-	std::vector<glm::vec3> normal(m->mNumFaces, glm::vec3(0.0f));
+	std::vector<glm::vec3> normal(m->mNumVertices, glm::vec3(0.0f));
+
 	if (m->HasNormals()) {
-		for (uint32_t i = 0; i < m->mNumFaces; ++i) {
+		for (uint32_t i = 0; i < m->mNumVertices; ++i) {
 			aiVector3D& n = m->mNormals[i];
 			normal[i] = glm::vec3(n.x, n.y, n.z);
 		}
 	}
+	
 	mesh.readNormal(std::move(normal));
 }
 

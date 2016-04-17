@@ -28,11 +28,13 @@ class SWORD_EXPORT Root {
     }
 
     ~Root();
+
+	// this method will init sdl ,glew,log4cplus,
+	// member variable win_ and context_ will be set,
+	// and the render_window_ will attach the win_;
+	void init();
+
   private:
-    // this method will init sdl ,glew,log4cplus,
-    // member variable win_ and context_ will be set,
-    // and the render_window_ will attach the win_;
-    void init();
 
     void createRenderWindow();
 

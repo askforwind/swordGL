@@ -31,8 +31,6 @@ public:
 
 private:
 	float mouse_sensitivity_;
-	float horizontal_angle_;
-	float vertical_angle_;
 };
 
 SWORD_END

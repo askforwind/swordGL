@@ -22,25 +22,23 @@ public:
 
 	void set_direction(const glm::vec3& d);
 
-	void forward(float unit);
-
-	void backward(float unit);
-
-	void moveLeft(float unit);
-
-	void moveRight(float unit);
-
-	void moveUp(float unit);
-
-	void moveDown(float unit);
+	void set_up(const glm::vec3& u);
 
 	void translate(const glm::vec3& v);
 
-	const glm::vec3 get_direction()const;
+	void yaw(const float radian);
+
+	void pitch(const float radian);
+
+	glm::vec3 get_direction()const;
+
+	//glm::vec3 get_up()const;
+
+	glm::vec3 get_right()const;
 
 	const glm::mat4 get_matrix()const;
 
-private:
+protected:
 	void updateView();
 
 	void updateProject();

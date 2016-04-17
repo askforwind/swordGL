@@ -33,7 +33,8 @@ public:
 		glm::vec3 transparent;
 		bool wireframe;
 		bool twosided;
-		std::string texture_id[4];
+		std::string tex_opacity[4];
+		std::string tex_diff;
 	};
 
 	void set_diffuse(const glm::vec3& diff);
@@ -48,7 +49,9 @@ public:
 
 	void set_twosided(bool b);
 
-	void set_texture(std::string& id, uint8_t idx);
+	void set_opacity_tex(const std::string& id,uint8_t idx);
+
+	void set_diff_tex(const std::string& id);
 
 	const Info* get_info()const { return &info_; }
 
