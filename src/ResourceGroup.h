@@ -15,49 +15,110 @@
 #ifndef SWORD_RESOURCE_GROUP_H__
 #define SWORD_RESOURCE_GROUP_H__
 
-#include "Texture.h"
-#include "Material.h"
-#include "Mesh.h"
 #include <unordered_map>
 #include <string>
+#include <tuple>
+#include <cassert>
+#include <memory>
+#include "Platform.h"
 
-struct aiMesh;
-struct aiMaterial;
 SWORD_BEGIN
 
-typedef  std::vector<std::string> Module;
+struct Mesh;
+struct Material;
+struct Module;
+class Texture;
+class Skeleton;
+
+typedef  std::shared_ptr<Mesh> MeshPtr;
+typedef  std::shared_ptr<Material> MaterialPtr;
+typedef  std::shared_ptr<Module> ModulePtr;
+typedef  std::shared_ptr<Texture> TexturePtr;
+typedef  std::shared_ptr<Skeleton> SkeletonPtr;
 
 class SWORD_EXPORT ResourceGroup {
 public:
 	ResourceGroup();
-	~ResourceGroup();
+	~ResourceGroup() = default;
 
-	static void initialise();
+	enum ResourceType {
+		TEXTURE = 0,
+		MESH = 1,
+		MATERIAL = 2,
+		MODULE = 3,
+		SKELETON = 4,
+		UNKNOWN = 5,
+	};
 
-	static void deinitialise();
+	class Registry {
+		friend ResourceGroup;
 
-	Texture* loadTexture(const std::string& path,const std::string& id);
+		enum SpecialKey {
+			TYPEINDEX = 5
+		};
 
-	Module* loadModule(const std::string& path,const std::string& id);
+		template<ResourceType type, class T>
+		void signUp(const std::string& id, T resource_ptr) {
+			assert(type != UNKNOWN);
 
-	const Texture* get_texture(const std::string& id);
+			static_assert(std::is_same<T, 
+						  std::remove_reference<decltype(std::get<type>(resource_map_))>::
+						  type::value_type::second_type>::value
+						, "The Resource ID isn't right for the resource type");
 
-	const Mesh* get_mesh(const std::string& id);
+			std::get<TYPEINDEX>(this->resource_map_).insert(std::make_pair(id, type));
+			std::get<type>(this->resource_map_).insert(std::make_pair(id, resource_ptr));
+		}
 
-	const Material* get_material(const std::string& id);
+		ResourceType exist(const std::string& id);
+
+		template<ResourceType type>
+		void release(const std::string& id) {
+			assert(type != UNKNOWN);
+			if (exist(id) == UNKNOWN) return;
+			assert(exist(id) == type);
+
+			auto iter = std::get<type>(resource_map_).find(id);
+			std::get<type>(resource_map_).erase(iter);
+		}
+
+		template
+			<ResourceType type,
+			class T = std::remove_reference<decltype(std::get<type>(resource_map_))>::type::value_type::second_type
+			>
+			T get(const std::string& id) {
+			assert(type != UNKNOWN);
+			assert(exist(id) != UNKNOWN);
+			assert(exist(id) == type);
+			return std::get<type>(resource_map_).find(id)->second;
+		}
+
+		std::tuple
+			<
+			std::unordered_map<std::string, std::shared_ptr<Texture> >
+			, std::unordered_map<std::string, std::shared_ptr<Mesh> >
+			, std::unordered_map<std::string, std::shared_ptr<Material> >
+			, std::unordered_map<std::string, std::shared_ptr<Module> >
+			, std::unordered_map<std::string, std::shared_ptr<Skeleton> >
+			, std::unordered_map<std::string, ResourceType>
+			> resource_map_;
+
+	};
+
+	bool loadTexture(const std::string& filename);
+
+	std::string loadModule(const std::string& filename);
+
+	template<ResourceType type>
+	auto get(const std::string& id) ->decltype(R.get<type>(id)) {
+		return R.get<type>(id);
+	}
 
 private:
 
-	void loadMesh(const std::string& id,const aiMesh* m,const std::string& mat_id);
+	Registry R;
 
-	void loadMaterial(const std::string& id, const aiMaterial* m);
-
-	std::unordered_map<std::string, Texture> all_texture_;
-	std::unordered_map<std::string, Mesh> all_mesh_;
-	std::unordered_map<std::string, Material> all_material_;
-	std::unordered_map<std::string, Module> all_module_;
 };
-
 
 SWORD_END
 

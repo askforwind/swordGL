@@ -6,7 +6,7 @@
 #
 # Last modified: 2016-02-24 14:31
 #
-# Filename: LogManager.cc
+# Filename: LogManager.cpp
 #
 # Description:
 #

@@ -1,23 +1,40 @@
 #include<GL/glew.h>
 #include"Root.h"
-#include"shader.hpp"
+#include"shader.h"
 #include"FPSCamera.h"
 #include"ResourceGroup.h"
 #include<iostream>
 #include"SDL2\SDL_mouse.h"
 #include"Timer.h"
+#include "SDL2/SDL_gamecontroller.h"
+#include "assimp\Importer.hpp"
+#include "assimp\postprocess.h"
+#include "assimp\scene.h"
+#include "glm/gtx/quaternion.hpp"
+#include "glm\glm.hpp"
+#include <set>
+#include "LogManager.h"
+#include "config.h"
+#include "ResourceDef.h"
+#include "Texture.h"
+#include <fstream>
+#include "Skeleton.h"
+#include "../build/rightAnim.h"
 
 int32_t matId;
 SWORD::Root root;
 
-float speed = 0.05;
-bool wasd[4] = { false, false, false, false };
+
+bool wasd[6] = { false, false, false, false,false,false };
 
 void keyPress(const SDL_KeyboardEvent &arg) {
 	if (arg.keysym.sym == SDLK_w) wasd[0] = true;
 	if (arg.keysym.sym == SDLK_a) wasd[1] = true;
 	if (arg.keysym.sym == SDLK_s) wasd[2] = true;
 	if (arg.keysym.sym == SDLK_d) wasd[3] = true;
+	if (arg.keysym.sym == SDLK_q) wasd[4] = true;
+	if (arg.keysym.sym == SDLK_e) wasd[5] = true;
+	//std::cout << wasd[0] << wasd[1] << wasd[2] << wasd[3] << std::endl;
 }
 
 void keyRelease(const SDL_KeyboardEvent& arg) {
@@ -25,100 +42,131 @@ void keyRelease(const SDL_KeyboardEvent& arg) {
 	if (arg.keysym.sym == SDLK_a) wasd[1] = false;
 	if (arg.keysym.sym == SDLK_s) wasd[2] = false;
 	if (arg.keysym.sym == SDLK_d) wasd[3] = false;
+	if (arg.keysym.sym == SDLK_q) wasd[4] = false;
+	if (arg.keysym.sym == SDLK_e) wasd[5] = false;
+	//std::cout << wasd[0] << wasd[1] << wasd[2] << wasd[3] << std::endl;
 }
-
-void update(SWORD::FPSCamera& cam) {
+float speed = 0.02;
+void update(SWORD::FPSCamera& cam, float dt) {
 
 	int ox, oy;
+	//std::cout << dt << std::endl;
+	int z = wasd[2] - wasd[0];
+	int	x = wasd[3] - wasd[1];
+	int y = wasd[4] - wasd[5];
+	glm::vec3 d(0.0f);
+	glm::vec3 r(0.0f);
+	glm::vec3 u(0.0f);
+	if (x) d = 1.0f*x*cam.get_right();
+	if (z) r = -1.0f*z*cam.get_direction();
+	if (y) u = 1.0f*y*cam.get_up();
+	//std::cout << d.x << d.y << d.z << std::endl;
+	if (x || z || y) cam.translate(glm::normalize(d + r + u)*dt*speed);
+
 	SDL_GetMouseState(&ox, &oy);
 	float offx = 400.0f - ox;
 	float offy = 300.0f - oy;
-	
-	cam.moveMouse(offx, offy, 0.005f);
-
-	int z = wasd[2] - wasd[0];
-	int	x = wasd[3] - wasd[1];
-
-	glm::vec3 dir = cam.get_direction();
-	glm::vec3 right = glm::cross(dir, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::vec3 d(0.0f);
-	if (x) d = (float)x * right;
-	if (z) d += -(float)z*dir;
-	if (x || z) cam.translate(glm::normalize(d)*speed);
-
-	SDL_WarpMouseInWindow(SDL_GetMouseFocus(), 400, 300);
-
+	cam.yaw(offx*0.001);
+	cam.pitch(offy*0.001);
+	SDL_WarpMouseInWindow(root.get_render_window()->get_win_handle(), 400, 300);
+	//SDL_PumpEvents();
+	SDL_FlushEvent(SDL_MOUSEMOTION);
 	glm::mat4 mvp = cam.get_matrix()*glm::mat4(1.0f);
 	glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
 }
 
-struct fuck {
-	uint32_t ver, idx, uv;
-};
-
-int main(int argc,char*argv[]) {
+int main(int argc, char*argv []) {
 	root.init();
-	SWORD::ResourceGroup mResource;
-	mResource.initialise();
 	SDL_WarpMouseInWindow(root.get_render_window()->get_win_handle(), 400, 300);
 	SWORD::FPSCamera mCamera;
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-	mCamera.set_clip_plane(0.1f, 1000.0f);
+	mCamera.set_clip_plane(0.1f, 10000.0f);
 	mCamera.set_aspect(4.0f / 3.0f);
-	
-	mCamera.set_position(glm::vec3(0, 0, 50));
+	mCamera.set_position(glm::vec3(0, 0, 60));
 	mCamera.lookAt(glm::vec3(0, 0, 0));
-
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 mvp = mCamera.get_matrix()*  model;
-	uint32_t proId = LoadShaders("vs.glsl", "ps.glsl");
 
-    glUseProgram(proId);
-	matId = glGetUniformLocation(proId, "MVP");
-	//glm::mat4 mvp = mCamera.get_matrix()*glm::mat4(1.0f);
-    glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
-	int32_t  tex0 = glGetUniformLocation(proId, "tex0");
-    
-	SWORD::Texture* tex = mResource.loadTexture("t.png", "t");
-	SWORD::Module* mod = mResource.loadModule("F:/resource/warrior/war_fbx.FBX", "cube");
+	Technique tech;
+	tech.Init();
+	if(tech.AddShader(GL_VERTEX_SHADER, "vs.glsl")!=true) assert(0);
+	if (tech.AddShader(GL_FRAGMENT_SHADER, "ps.glsl") != true) assert(0);
+	if (tech.Finalize() != true) assert(0);
+	tech.Enable();
 
-	std::vector<fuck> fff;
-	fff.resize(mod->size());
+	SDL_ShowCursor(0);
+	matId = tech.GetUniformLocation("MVP");
+	GLint texID = tech.GetUniformLocation("gColorMap");
+	glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
+	glUniform1i(texID, 0);
 
-    uint32_t elevao;
-    glGenVertexArrays(1, &elevao);
-    glBindVertexArray(elevao);
+	uint32_t boneId = tech.GetUniformLocation("bones");
 
-	for (int i = 0; i < mod->size(); ++i) {
+	SWORD::ResourceGroup rg;
+	std::string module_id = rg.loadModule("war_fbx.FBX");
+	SWORD::ModulePtr module = rg.get<rg.MODULE>(module_id);
 
-		const SWORD::Mesh* mesh = mResource.get_mesh(mod->operator[](i));
-		const SWORD::Mesh::Info* info = mesh->get_info();
+	uint32_t VAO[10];
+	glGenVertexArrays(module->sub_meshs.size(), VAO);
+	for (size_t i = 0; i < module->sub_meshs.size(); i++) {
+		SWORD::MeshPtr mesh = rg.get<rg.MESH>(module->sub_meshs[i]);
+		
+		glBindVertexArray(VAO[i]);
 
-		glGenBuffers(1, &fff[i].idx);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fff[i].idx);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t)*info->index.size(),
-					 info->index.data(), GL_STATIC_DRAW);
+		uint32_t pos, tex, index, bone, weight;
+		glGenBuffers(1, &pos);
+		glGenBuffers(1, &tex);
+		glGenBuffers(1, &index);
+		glGenBuffers(1, &bone);
+		glGenBuffers(1, &weight);
 
-		glGenBuffers(1, &fff[i].ver);
-		glBindBuffer(GL_ARRAY_BUFFER, fff[i].ver);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*info->vertex.size(),
-					 info->vertex.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER,pos);
+		glBufferData(GL_ARRAY_BUFFER, mesh->vertex.size() * sizeof(mesh->vertex[0]),
+					 mesh->vertex.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-		glGenBuffers(1, &fff[i].uv);
-		glBindBuffer(GL_ARRAY_BUFFER, fff[i].uv);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*info->uv.size(),
-					 info->uv.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, tex);
+		glBufferData(GL_ARRAY_BUFFER, mesh->texCoord.size() * sizeof(mesh->texCoord[0]),
+					 mesh->texCoord.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->index.size() * sizeof(mesh->index[0]),
+					 mesh->index.data(), GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, bone);
+		glBufferData(GL_ARRAY_BUFFER, mesh->joint_id.size() * sizeof(mesh->joint_id[0]),
+					 mesh->joint_id.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(2);
+		glVertexAttribIPointer(2, 4, GL_UNSIGNED_INT, 0, 0);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, weight);
+		glBufferData(GL_ARRAY_BUFFER, mesh->joint_weight.size() * sizeof(mesh->joint_weight[0]),
+					 mesh->joint_weight.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
 	}
 
-    bool quit = false;
-    SDL_Event evt;
-    glEnable(GL_DEPTH_TEST);
+	SWORD::MeshPtr mesh0 = rg.get<rg.MESH>(module->sub_meshs[0]);
+	SWORD::SkeletonPtr ske = rg.get<rg.SKELETON>(mesh0->skeleton_id);
+
+
+	
+	bool quit = false;
+	SDL_Event evt;
+	glEnable(GL_DEPTH_TEST);
 	Timer time;
 	time.begin();
-	time.tick();
-    while(!quit) {
-        glClearColor(0.0, 0.0, 0.0, 0.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glUniform1i(texID, 0);
+	std::vector<Matrix4f> tran;
+	while (!quit) {
+		
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		while (SDL_PollEvent(&evt)) {
 			switch (evt.type) {
@@ -134,174 +182,31 @@ int main(int argc,char*argv[]) {
 			default:break;
 			}
 		}
-		update(mCamera);
-        glEnableVertexAttribArray(0);
+		
+		update(mCamera, time.sinceLastTick());
+		ske->updateAnimation(time.sinceBegin()*0.001f);
+		glUniformMatrix4fv(boneId, ske->getAnimationMatrix().size(),
+						   GL_FALSE,
+						   &ske->getAnimationMatrix().data()[0][0][0]);
+		time.tick();
+		assert(glGetError() == 0);
 
-        tex->bindToActiveUnit(1);
-        glUniform1i(tex0, 1);
-		for (int i = 0; i < mod->size(); i++) {
-			
-			glBindBuffer(GL_ARRAY_BUFFER, fff[i].ver);
-			glVertexAttribPointer(
-				0,                  // attribute
-				3,                  // size
-				GL_FLOAT,           // type
-				GL_FALSE,           // normalized?
-				0,                  // stride
-				(void*)0            // array buffer offset
-			);
+		for (size_t i = 0; i < module->sub_meshs.size(); i++) {
+			glBindVertexArray(VAO[i]);
 
-			glEnableVertexAttribArray(1);
-			glBindBuffer(GL_ARRAY_BUFFER, fff[i].uv);
-			glVertexAttribPointer(
-				1,
-				2,
-				GL_FLOAT,
-				GL_FALSE,
-				0,
-				(void*)0
-			);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fff[i].idx);
-
-			const SWORD::Mesh* mesh = mResource.get_mesh(mod->operator[](i));
-			const SWORD::Mesh::Info* info = mesh->get_info();
-			const SWORD::Material::Info* mf = mResource.get_material(info->material_id)->get_info();
-			const SWORD::Texture* d = mResource.get_texture(mf->tex_diff);
-			if (d != 0) {
-				d->bindToActiveUnit(1);
-				glUniform1i(tex0, 1);
-			}
-
-			glDrawElements(GL_TRIANGLES,
-						   info->index.size(), GL_UNSIGNED_SHORT, 0);
+			SWORD::MeshPtr mesh = rg.get<rg.MESH>(module->sub_meshs[i]);
+			SWORD::MaterialPtr material = rg.get<rg.MATERIAL>(mesh->material_id);
+			SWORD::TexturePtr tex = rg.get<rg.TEXTURE>(material->tex_diff);
+			tex->bindToActiveUnit(0);
+			glDrawElements(GL_TRIANGLES, mesh->index.size(), GL_UNSIGNED_INT, 0);
 		}
-       
-        root.swapBuffer();
-    }
-	tex->unload();
-	mResource.deinitialise();
-    glBindVertexArray(0);
-    glDeleteProgram(proId);
-    glDeleteVertexArrays(1, &elevao);
-    return 0;
+
+		root.swapBuffer();
+	}
+
+	glBindVertexArray(0);
+
+	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

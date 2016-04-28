@@ -19,12 +19,9 @@ set(SRC ./src/Platform.h
     ./src/RenderWindow.h
     ./src/RenderWindow.cpp
     ./src/shader.cpp
-    ./src/shader.hpp
-    ./src/Application.h
-    ./src/Application.cpp
+    ./src/shader.h
     ./src/Batch.h
     ./src/Batch.cpp
-    ./src/AppInputHandle.cpp
     ./src/BatchManager.h
     ./src/BatchManager.cpp
     ./src/Math.h
@@ -41,12 +38,17 @@ set(SRC ./src/Platform.h
 	./src/Node.cpp
 	./src/FPSCamera.h
 	./src/FPSCamera.cpp
-	./src/Mesh.h
-	./src/Mesh.cpp
-	./src/Material.h
-	./src/Material.cpp
+	./src/ResourceDef.h
+	./src/Skeleton.h
+	./src/Skeleton.cpp
+	./src/FreeImageCodec.h
+	./src/FreeImageCodec.cpp
 	./src/ResourceGroup.h
-	./src/ResourceGroup.cpp)
+	./src/ResourceGroup.cpp
+	./src/ResourceDef.h
+	./src/AssimpCodec.h
+	./src/AssimpCodec.cpp
+	./src/Timer.h)
 
 
 set(CHECK_OPENGL_FUNCTION 1)

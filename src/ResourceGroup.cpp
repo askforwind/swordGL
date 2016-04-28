@@ -1,284 +1,127 @@
-#include <algorithm>
 #include "ResourceGroup.h"
 #include "LogManager.h"
-#include "FreeImage.h"
-#include "assimp\Importer.hpp"
-#include "assimp\postprocess.h"
-#include "assimp\scene.h"
+#include "ResourceDef.h"
+#include "Skeleton.h"
+#include "Texture.h"
+#include "AssimpCodec.h"
+
 SWORD_BEGIN
 
-void ResourceGroup::initialise() {
-	FreeImage_Initialise();
-	FreeImage_SetOutputMessage(
-		[](FREE_IMAGE_FORMAT fif, const char* message)->void {
-		std::string old_console_format = WIND::LogManager::
-			set_default_console_logger_format("%D{%H:%M:%S} %p: %m\n");
-		std::string old_file_format = WIND::LogManager::
-			set_default_file_logger_format("%D{%H:%M:%S} %p: %m\n");
-
-		std::string error = "Image Error:";
-		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-					   error
-					   + FreeImage_GetFormatFromFIF(fif)
-					   + " " + message);
-
-		WIND::LogManager::set_default_console_logger_format(old_console_format);
-		WIND::LogManager::set_default_file_logger_format(old_file_format);
-	});
+ResourceGroup::ResourceType
+ResourceGroup::Registry::exist(const std::string & id) {
+	auto iter = std::get<TYPEINDEX>(resource_map_).find(id);
+	if (iter !=std::get<TYPEINDEX>(resource_map_).end()) {
+		return iter->second;
+	}
+	return UNKNOWN;
 }
 
-void ResourceGroup::deinitialise() {
-	FreeImage_DeInitialise();
-}
-
-ResourceGroup::ResourceGroup()
-	:all_texture_()
-	, all_mesh_()
-	, all_material_()
-	, all_module_() {
-}
-
-ResourceGroup::~ResourceGroup() {
-	auto iter = all_texture_.begin();
-	for (; iter != all_texture_.end(); iter++) {
-		iter->second.unload();
-	}
-
-	all_texture_.clear();
-	all_material_.clear();
-	all_mesh_.clear();
-	all_module_.clear();
-}
-
-
-Texture* ResourceGroup::loadTexture(const std::string& path,
-								const std::string& id) {
-
-	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER,
-				   "start load texture:" + path +
-				   "  id:" + id);
-
-	if (all_texture_.find(id) != all_texture_.end()) {
-		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-					   "Could't load texture:" + path +
-					   " because the id:" + id + "was occpied");
-		return nullptr;
-	}
-
-	Texture t;
-	if (!t.load(path.c_str())) {
-		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-					   "Could't load texture:" + path +
-					   " id:" + id);
-		return nullptr;
-	}
-
-	auto r = all_texture_.insert(std::make_pair(id, t));
-	return &r.first->second;
-}
-
-Module* ResourceGroup::loadModule(const std::string& path,
-							   const std::string& id) {
-	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER,
-				   "start load module:" + path +
-				   "  id:" + id);
-
-	if (all_module_.find(id) != all_module_.end()) {
-		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-					   "Could't load module:" + path +
-					   "because the id:" +
-					   id + "was occpied");
-		return nullptr;
-	}
-
-	Assimp::Importer import;
-	const aiScene* scene = import.ReadFile(path,
-										   aiProcessPreset_TargetRealtime_Quality);
-	if (!scene) {
-		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-					   "Could't load module:" + path +
-					   " id:" + id +
-					   " error:" + import.GetErrorString());
-		return nullptr;
-	}
-
-	Module module(scene->mNumMeshes, "");
-
-	std::string mat_id,mesh_id;
-	for (uint32_t i=0;i<scene->mNumMeshes;++i){
-		const aiMesh* m = scene->mMeshes[i];
-		mat_id = id + "_material_" + std::to_string(i);
-		mesh_id = id + "_mesh_" + std::to_string(i);
-		loadMesh(mesh_id, m, mat_id);
-		loadMaterial(mat_id, scene->mMaterials[m->mMaterialIndex]);
-		module[i] = mesh_id;
-	}
-	
-	auto r = all_module_.insert(std::make_pair(id, module));
-	return &r.first->second;
+ResourceGroup::ResourceGroup() {
 }
 
 namespace {
-	void dumpMaterialTextureInfo(const aiMaterial* m,const std::string& id) {
+	std::string generate_id(const std::string& base, 
+							const std::string& ext, 
+							int idx) {
+		return base + "_" + ext + "_" + std::to_string(idx);
+	}
+
+	std::string generate_id(const std::string& base,
+							const std::string& ext,
+							const std::string idx) {
+		return base + "_" + ext + "_" + idx;
+	}
+}
+
+std::string ResourceGroup::loadModule(const std::string & filename) {
+
+	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER,
+				   "start load module:" +
+				   filename);
+
+	if (R.exist(generate_id(filename, "module", 0)) != UNKNOWN) {
+		WIND_LOG_WARN(DEFAULT_WIND_LOGGER,
+					  filename +
+					  "has load before");
+		return "";
+	}
+	
+
+	std::vector<Mesh> mesh;
+	std::vector<Material> material;
+	Skeleton skeleton;
+	
+	AssimpCodec codec;
+	codec.decode(filename);
+	codec.load(mesh, material, skeleton);
+
+	ModulePtr p_module(new Module ,[](Module* m) {
+		WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER,
+					   m->self_id+" has deleted");
+		delete m;
+	});
+
+	p_module->self_id = generate_id(filename, "module", 0);
+	
+	SkeletonPtr p_ske(new Skeleton ,[](Skeleton* m) {
+		WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER,
+					   m->self_id() + "  has deleted");
+		delete m;
+	});
+
+	*p_ske = skeleton;
+	p_ske->set_self_id(generate_id(filename, "skeleton", 0));
+	R.signUp<SKELETON>(p_ske->self_id(), p_ske);
+
+	for (size_t i = 0; i < mesh.size(); i++) {
+		MeshPtr pm(new Mesh, [](Mesh* m) {
+			WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER,
+						   m->self_id + "has deleted");
+			delete m; 
+		});
 		
-		WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER, "material :" + id + " tex info");
-		for (int i = 0; i < 0xc; ++i) {
-			uint16_t k = m->GetTextureCount((aiTextureType)i);
+		pm->vertex = std::move(mesh[i].vertex);
+		pm->index = std::move(mesh[i].index);
+		pm->self_id = generate_id(filename, "mesh", i);
+		pm->skeleton_id = p_ske->self_id();
+		pm->joint_id = std::move(mesh[i].joint_id);
+		pm->joint_weight = std::move(mesh[i].joint_weight);
+		pm->material_id = generate_id(filename, "material", mesh[i].material_id);
+		pm->texCoord = std::move(mesh[i].texCoord);
+		pm->normal = std::move(mesh[i].normal);
+		p_module->sub_meshs.push_back(pm->self_id);
+		R.signUp<MESH>(pm->self_id, pm);
+	}
+	
+	for (size_t i = 0; i < material.size();++i)
+	{
+		TexturePtr p_tex(new Texture,[](Texture*m){
+			WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER,
+						   m->self_id() + " has deleted");
+			delete m; });
 
-			if (k) {
-				aiString path("none");
-				m->GetTexture((aiTextureType)i, 0, &path);
+		MaterialPtr p_mat(new Material, [](Material*m) {
+			WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER,
+						   m->self_id + " has deleted");
+			delete m; });
 
-				WIND_LOG_DEBUG(DEFAULT_WIND_LOGGER,
-							   "  " + std::to_string(i) + " " +
-							   std::to_string(k) + " " +
-							   path.C_Str());
-			}
+		std::string path = material[i].tex_diff;
+		*p_mat = material[i];
+		p_mat->self_id = generate_id(filename, "material", i);
+		p_mat->tex_diff = "";
+		
+		std::string texture_filename = path.substr(path.find_last_of("\\/") + 1);
+		if (p_tex->load(texture_filename,false,false)) {
+			p_tex->set_self_id(generate_id(filename, "texture", texture_filename));
+			R.signUp<TEXTURE>(p_tex->self_id(), p_tex);
+			p_mat->tex_diff = p_tex->self_id();
 		}
-	}
-}
 
-void ResourceGroup::loadMaterial(const std::string& id, 
-								 const aiMaterial* m) {
-	
-	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER,
-				   "start load material,ID:" +
-				   id);
-
-	if (all_material_.find(id) != all_material_.end()) {
-		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-					   "Could't load material,because the id:" +
-					   id + "was occpied");
-		return;
+		R.signUp<MATERIAL>(p_mat->self_id, p_mat);
 	}
 
-	auto r = all_material_.insert(std::make_pair(id, Material()));
-	Material& material = r.first->second;
-	
-	aiColor3D c;
-	if (m->Get(AI_MATKEY_COLOR_DIFFUSE, c) == AI_SUCCESS) {
-		material.set_diffuse(glm::vec3(c.r, c.g, c.b));
-	}
-	if (m->Get(AI_MATKEY_COLOR_AMBIENT, c) == AI_SUCCESS) {
-		material.set_ambient(glm::vec3(c.r, c.g, c.b));
-	}
-	if (m->Get(AI_MATKEY_COLOR_SPECULAR, c) == AI_SUCCESS) {
-		material.set_specular(glm::vec3(c.r, c.g, c.b));
-	}
-	
-	uint8_t num_tex_opacity = m->GetTextureCount(aiTextureType_OPACITY);
-	for (int i = 0; i < num_tex_opacity; i++) {
-		aiString tex_path;
-		m->GetTexture(aiTextureType_OPACITY, i, &tex_path);
-		std::string str = tex_path.C_Str();
-		std::string tex_id = id + "_opacity_tex_" + std::to_string(i);
-		loadTexture(str.substr(str.find_last_of('\\')+1),tex_id );
-		material.set_opacity_tex(tex_id, i);
-	}
-
-	if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-		aiString tex_path;
-		m->GetTexture(aiTextureType_DIFFUSE, 0, &tex_path);
-		std::string str = tex_path.C_Str();
-		std::string tex_id = id + "_diffuse_tex_" + std::to_string(0);
-		loadTexture(str.substr(str.find_last_of('\\') + 1), tex_id);
-		material.set_diff_tex(tex_id);
-	}
-
-	dumpMaterialTextureInfo(m, id);
-	
-	//TODO
-	
-}
-
-void ResourceGroup::loadMesh(const std::string& id,
-							 const aiMesh* m,
-							 const std::string& mat_id) {
-
-	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER,
-				   "start load mesh,ID:" +
-				   id);
-
-	if (all_mesh_.find(id) != all_mesh_.end()) {
-		WIND_LOG_ERROR(DEFAULT_WIND_LOGGER,
-					   "Could't load mesh,because the id:" +
-					   id + "was occpied");
-		return;
-	}
-
-	
-	auto r = all_mesh_.insert(std::make_pair(id, Mesh()));
-	Mesh& mesh = r.first->second;
-	mesh.set_material(mat_id);
-	//------read vertex-------
-	std::vector<glm::vec3> vertex(m->mNumVertices, glm::vec3(0.0f));
-	for (uint32_t i = 0; i < m->mNumVertices; ++i) {
-		aiVector3D* vec = m->mVertices + i;
-		vertex[i] = glm::vec3(vec->x, vec->y, vec->z);
-	}
-
-	mesh.readVertex(std::move(vertex));
-
-	//-------read index--------;
-	std::vector<uint16_t> idx(m->mNumFaces * 3, 0);
-	for (uint32_t i = 0; i < m->mNumFaces; ++i) {
-		aiFace& f = m->mFaces[i];
-		idx[3 * i] = f.mIndices[0];
-		idx[3 * i + 1] = f.mIndices[1];
-		idx[3 * i + 2] = f.mIndices[2];
-		assert(f.mNumIndices == 3);
-	}
-
-	mesh.readIndex(std::move(idx));
-
-	//-------read color----------;
-	std::vector<glm::vec4> color(m->mNumVertices, glm::vec4(1.0f));
-	
-	if (m->HasVertexColors(0)) {
-		for (uint32_t i = 0; i < m->mNumVertices; ++i) {
-			aiColor4D& c = m->mColors[0][i];
-			color[i] = glm::vec4(c.r, c.b, c.g, c.a);
-		}
-	}
-	mesh.readColor(std::move(color));
-
-	//-------read uv----------;
-	std::vector<glm::vec2> uv(m->mNumVertices,glm::vec2(1.0f));
-	if (m->HasTextureCoords(0)) {
-		for (uint32_t i = 0; i < m->mNumVertices; ++i) {
-			aiVector3D& tc = m->mTextureCoords[0][i];
-			uv[i] = glm::vec2(tc.x, tc.y);
-		}
-	}
-	mesh.readUV(std::move(uv));
-	
-	//-------read normal----------;
-	std::vector<glm::vec3> normal(m->mNumVertices, glm::vec3(0.0f));
-
-	if (m->HasNormals()) {
-		for (uint32_t i = 0; i < m->mNumVertices; ++i) {
-			aiVector3D& n = m->mNormals[i];
-			normal[i] = glm::vec3(n.x, n.y, n.z);
-		}
-	}
-	
-	mesh.readNormal(std::move(normal));
-}
-
-const Material* ResourceGroup::get_material(const std::string& id) {
-	auto iter = all_material_.find(id);
-	return iter == all_material_.end() ? NULL : &iter->second;
-}
-
-const Mesh* ResourceGroup::get_mesh(const std::string& id) {
-	auto iter = all_mesh_.find(id);
-	return iter == all_mesh_.end() ? NULL : &iter->second;
-}
-
-
-const Texture* ResourceGroup::get_texture(const std::string& id) {
-	auto iter = all_texture_.find(id);
-	return iter == all_texture_.end() ? NULL : &iter->second;
+	R.signUp<MODULE>(p_module->self_id, p_module);
+	return p_module->self_id;
 }
 
 SWORD_END

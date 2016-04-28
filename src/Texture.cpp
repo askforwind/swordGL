@@ -1,10 +1,7 @@
 #include"Texture.h"
+#include "FreeImageCodec.h"
 #include"LogManager.h"
-#include<FreeImage.h>
-#include<string>
 #include<GL/glew.h>
-#include<cassert>
-#include<algorithm>
 #include"config.h"
 
 using std::max;
@@ -21,45 +18,25 @@ Texture::Texture()
     , texture_format_(0) {
 }
 
-bool Texture::load(const char* filename,
+bool Texture::load(const std::string& filename,
 				   bool compress,
 				   bool auto_create_mipmap,
 				   uint8_t mipmap_num) {
 
+	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER, "start load texture:  " + filename);
+
     unload();
+	
+	FreeImageCodec codec;
+	FreeImageCodec::Result r = codec.decode(filename.c_str());
 
-    FREE_IMAGE_FORMAT format = FreeImage_GetFileType(filename, 0);
-    std::string msg;
+	if (r.byte == nullptr) return false;
 
-    if(format == FIF_UNKNOWN) {
-        msg = "Unknow file Type:";
-        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, msg + filename );
-        return false;
-    }
+	width_ = r.width;
+	height_ = r.height;
 
-    FIBITMAP* bitmap = FreeImage_Load(format, filename);
-    if(!bitmap) {
-        msg = "Can't load file:";
-        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, msg + filename);
-        return false;
-    }
-
-    BYTE* bite_data = FreeImage_GetBits(bitmap);
-    width_ = FreeImage_GetWidth(bitmap);
-    height_ = FreeImage_GetHeight(bitmap);
-
-    if(!bite_data || width_ == 0 || height_ == 0) {
-        msg = "Can't Load Resource Correct in:";
-        WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, msg + filename);
-        return false;
-    }
-
-    createTexture(bite_data, FreeImage_GetColorType(bitmap),
+    createTexture(r.byte, r.color_type,
                    compress, auto_create_mipmap, mipmap_num);
-    FreeImage_Unload(bitmap);
-
-	msg = "load texture:";
-	WIND_LOG_TRACE(DEFAULT_WIND_LOGGER, msg + filename);
 
     return true;
 }
@@ -72,7 +49,7 @@ void Texture::createTexture(uint8_t* data,
                            ) {
 
     switch(color_type) {
-    case FIC_RGB:
+	case FreeImageCodec::RGB:
         texture_format_ = GL_BGR;
 #if GL_EXT_texture_compression_s3tc
         inte_format_ = compress ? GL_COMPRESSED_RGB_S3TC_DXT1_EXT : GL_RGB;
@@ -80,7 +57,7 @@ void Texture::createTexture(uint8_t* data,
         inte_format_ = compress ? GL_COMPRESSED_RGB : GL_RGB;
 #endif
         break;
-    case FIC_RGBALPHA:
+    case FreeImageCodec::RGBA:
         texture_format_ = GL_BGRA;
 #if GL_EXT_texture_compression_s3tc
         inte_format_ = compress ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_RGBA;
@@ -103,6 +80,7 @@ void Texture::createTexture(uint8_t* data,
     CHECK_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
     CHECK_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
     if(!(width_ & 3)) CHECK_GL_ERROR(glPixelStorei(GL_UNPACK_ALIGNMENT, 4));
+	assert(width_&&height_);
     CHECK_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, inte_format_, width_, height_, 0,
                                 texture_format_, GL_UNSIGNED_BYTE, data));
 
@@ -148,6 +126,7 @@ void Texture::setMipmapAuto(uint8_t max_level, uint8_t start_level) {
 
 void Texture::bindToActiveUnit(uint8_t idx)const {
     assert(tex_id_);
+	assert(width_&&height_);
 	CHECK_GL_ERROR(glActiveTexture(idx + GL_TEXTURE0));
 	CHECK_GL_ERROR(glBindTexture(GL_TEXTURE_2D, tex_id_));
 }

@@ -22,17 +22,15 @@ public:
 
 	void set_direction(const glm::vec3& d);
 
-	void set_up(const glm::vec3& u);
-
 	void translate(const glm::vec3& v);
 
-	void yaw(const float radian);
+	void yaw( float radian);
 
-	void pitch(const float radian);
+	void pitch( float radian);
 
 	glm::vec3 get_direction()const;
 
-	//glm::vec3 get_up()const;
+	glm::vec3 get_up()const;
 
 	glm::vec3 get_right()const;
 

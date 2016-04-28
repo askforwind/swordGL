@@ -54,6 +54,15 @@ void SWORD::Mesh::readNormal(std::vector<glm::vec3>&& normal) {
 	this->info_.normal = std::move(normal);
 }
 
+void SWORD::Mesh::readBones(const std::vector<Bones>& b) {
+	info_.bones = b;
+}
+
+void SWORD::Mesh::readBones(std::vector<Bones>&& b) {
+	info_.bones = std::move(b);
+}
+
+
 void SWORD::Mesh::set_material(const std::string& id) {
 	info_.material_id = id;
 }

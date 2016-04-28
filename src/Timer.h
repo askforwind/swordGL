@@ -25,7 +25,7 @@ class Timer {
         return (current_ - start_) * 1000.0f / frequency_;
     }
     float sinceLastTick() {
-        return (current_ - before_) * 1000.0f / frequency_;
+        return ((current_ - before_) * 1000.0f) / frequency_;
     }
 
 };

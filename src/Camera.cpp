@@ -15,6 +15,7 @@
 
 
 #include "Camera.h"
+#include "glm/gtx/quaternion.hpp"
 
 SWORD_BEGIN
 
@@ -41,7 +42,7 @@ void Camera::updateProject() {
 void SWORD::Camera::updateValue() {
 	//glm::vec3 right = glm::cross(direction_, up_);
 	//up_ = glm::cross(right, direction_);
-	up_ = glm::normalize(up_);
+	//up_ = glm::normalize(up_);
 	direction_ = glm::normalize(direction_);
 }
 
@@ -89,18 +90,19 @@ void Camera::translate(const glm::vec3& v) {
 	updateView();
 }
 
-void Camera::yaw(const float radian) {
+void Camera::yaw(float radian) {
+	radian /= 2.0f;
 	glm::vec4 center(position_ + direction_, 1.0f);
-	glm::mat4 r = glm::rotate(radian, glm::vec3(0.0f, 1.0f, 0.0f));
-	center = r*center;
-	lookAt(glm::vec3(center));
+	glm::quat q(cos(radian), sin(radian)*up_);
+	set_direction(glm::rotate(q,direction_));
 }
 
-void Camera::pitch(const float radian) {
+void Camera::pitch(float radian) {
+	radian /= 2.0f;
 	glm::vec4 center(position_ + direction_, 1.0f);
-	glm::mat4 r = glm::rotate(radian, glm::vec3(1.0f, 0.0f, 0.0f));
-	center = r*center;
-	lookAt(glm::vec3(center));
+	glm::vec3 right = glm::cross(direction_, up_);
+	glm::quat q(cos(radian), sin(radian)*right);
+	set_direction(glm::rotate(q, direction_));
 }
 
 
@@ -108,9 +110,10 @@ glm::vec3 Camera::get_direction()const {
 	return direction_;
 }
 
-glm::vec3 Camera::get_up()const {
+glm::vec3 Camera::get_up() const {
 	return up_;
 }
+
 
 glm::vec3 Camera::get_right()const {
 	return glm::cross(direction_, up_);

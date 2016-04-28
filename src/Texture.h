@@ -4,7 +4,7 @@
 #
 # Author: luoyi 844262725@qq.com
 #
-# Last modified: 2016-04-05 22:59
+# Last modified: 2016-04-024 22:45
 #
 # Filename: Texture.h
 #
@@ -16,6 +16,7 @@
 
 #include<stdint.h>
 #include"Platform.h"
+#include <string>
 
 SWORD_BEGIN
 
@@ -24,7 +25,7 @@ class ResourceGroup;
 class SWORD_EXPORT Texture {
 public:
 
-	bool load(const char* filename,
+	bool load(const std::string& filename,
 			  bool compress = true,
 			  bool auto_create_mipmap = true,
 			  uint8_t mipmap_num = default_mipmap_num_);
@@ -43,8 +44,12 @@ public:
 
 	const static uint8_t default_mipmap_num_;
 
+	void set_self_id(const std::string& id) { self_id_ = id; }
+
+	const std::string& self_id()const { return self_id_; }
 
 private:
+
 	Texture();
 
 	void createTexture(uint8_t* data,
@@ -52,6 +57,8 @@ private:
 					   bool compress,
 					   bool create_mipmap,
 					   uint8_t mipmap_num);
+
+	std::string self_id_;
 
 	uint32_t tex_id_;
 	uint16_t width_;
