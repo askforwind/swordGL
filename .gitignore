@@ -1,3 +1,7 @@
 /build
 /dependence/bin
 /dependence/lib
+/resource
+/src/main.cpp
+/src/Math.h
+/src/Math.cpp
