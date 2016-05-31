@@ -1,7 +1,7 @@
 #include"RenderWindow.h"
 #include<SDL2/SDL.h>
 #include<cassert>
-
+#include "GL/glew.h"
 SWORD_BEGIN
 
 RenderWindow::RenderWindow()
@@ -20,6 +20,11 @@ void RenderWindow::attach(SDL_Window* win) {
 
 SDL_Window * RenderWindow::get_win_handle() {
 	return this->win_;
+}
+
+void RenderWindow::get_win_pos(int& x, int& y) {
+	assert(win_);
+	SDL_GetWindowPosition(win_, &x, &y);
 }
 
 void RenderWindow::set_title(const char* title) {
@@ -42,8 +47,14 @@ void RenderWindow::set_fullscreen(bool full) {
     assert(win_);
     fullscreen_ = full;
 
-    if(fullscreen_)
-        SDL_SetWindowFullscreen(win_, 0);
+	if (fullscreen_) {
+		SDL_MaximizeWindow(win_);
+		//SDL_SetWindowFullscreen(win_, SDL_WINDOW_FULLSCREEN);
+		int x, y, w, h;
+		get_win_pos(x, y);
+		get_win_size(w, h);
+		glViewport(x, y, w, h);
+	}
     else
         SDL_SetWindowSize(win_, 800, 600);
 }

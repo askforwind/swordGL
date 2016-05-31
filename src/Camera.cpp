@@ -15,7 +15,8 @@
 
 
 #include "Camera.h"
-#include "glm/gtx/quaternion.hpp"
+#include <glm\gtx\quaternion.hpp>
+#include <glm\gtx\transform.hpp>
 
 SWORD_BEGIN
 
@@ -25,14 +26,16 @@ Camera::Camera()
 	, up_(0.0f, 1.0f, 0.0f)
 	, view_filed_(glm::radians(45.0f))
 	, aspect_(4.0f/3.0f)
-	, near_clip_(0.1f)
-	, far_clip_(10000.f){
+	, near_clip_(1.0f)
+	, far_clip_(1000.f)
+	, matrix_(1.0f){
 	updateProject();
 	updateView();
 }
 
 void Camera::updateView() {
-	view_ = glm::lookAt(position_, position_ + direction_, up_);
+	view_ = glm::lookAt(position_, position_ + direction_, glm::vec3(0.0f, 1.0f, 0.0f));
+	matrix_ = projection_*view_;
 }
 	
 void Camera::updateProject() {
@@ -40,9 +43,9 @@ void Camera::updateProject() {
 }
 
 void SWORD::Camera::updateValue() {
-	//glm::vec3 right = glm::cross(direction_, up_);
-	//up_ = glm::cross(right, direction_);
-	//up_ = glm::normalize(up_);
+	glm::vec3 right = glm::cross(direction_, glm::vec3(0.0f, 1.0f, 0.0f));
+	up_ = glm::cross(right, direction_);
+	up_ = glm::normalize(up_);
 	direction_ = glm::normalize(direction_);
 }
 
@@ -74,8 +77,9 @@ void Camera::set_position(const glm::vec3& p) {
 	updateView();
 }
 
-const glm::mat4 Camera::get_matrix() const {
-	return  projection_*view_;
+const glm::mat4& Camera::get_matrix()const {
+	return matrix_;
+	 
 }
 
 void Camera::set_direction(const glm::vec3& d) {
@@ -83,7 +87,6 @@ void Camera::set_direction(const glm::vec3& d) {
 	updateValue();
 	updateView();
 }
-
 
 void Camera::translate(const glm::vec3& v) {
 	position_ += v;
@@ -117,6 +120,10 @@ glm::vec3 Camera::get_up() const {
 
 glm::vec3 Camera::get_right()const {
 	return glm::cross(direction_, up_);
+}
+
+const glm::vec3& Camera::get_position() const {
+	return position_;
 }
 
 SWORD_END

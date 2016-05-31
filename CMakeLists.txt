@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 2.8)
-set(CMAKE_BUILD_TYPE Debug)
 
 PROJECT(swordGL)
 
@@ -18,12 +17,8 @@ set(SRC ./src/Platform.h
     ./src/main.cpp
     ./src/RenderWindow.h
     ./src/RenderWindow.cpp
-    ./src/shader.cpp
-    ./src/shader.h
-    ./src/Batch.h
-    ./src/Batch.cpp
-    ./src/BatchManager.h
-    ./src/BatchManager.cpp
+    ./src/Technique.cpp
+    ./src/Technique.h
     ./src/Math.h
     ./src/Math.cpp
     ./src/Root.h
@@ -34,13 +29,11 @@ set(SRC ./src/Platform.h
     ./dependence/LogManager.cpp
 	./src/Camera.h
 	./src/Camera.cpp
-	./src/Node.h
-	./src/Node.cpp
 	./src/FPSCamera.h
 	./src/FPSCamera.cpp
-	./src/ResourceDef.h
 	./src/Skeleton.h
 	./src/Skeleton.cpp
+	./src/Singleton.h
 	./src/FreeImageCodec.h
 	./src/FreeImageCodec.cpp
 	./src/ResourceGroup.h
@@ -48,6 +41,21 @@ set(SRC ./src/Platform.h
 	./src/ResourceDef.h
 	./src/AssimpCodec.h
 	./src/AssimpCodec.cpp
+	./src/BufferManager.h
+	./src/BufferManager.cpp
+	./src/Combiner.h
+	./src/Combiner.cpp
+	./src/CommandDef.h
+	./src/Entity.cpp
+	./src/Entity.h
+	./src/EntityManager.h
+	./src/EntityManager.cpp
+	./src/TechniqueManager.h
+	./src/TechniqueManager.cpp
+	./src/RenderQueue.h
+	./src/RenderQueue.cpp
+	./src/test.h
+	./src/TypeDef.h
 	./src/Timer.h)
 
 
@@ -67,8 +75,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/Dependence/lib)
 
 set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/Dependence/include)
-
-message(${CMAKE_LIBRARY_PATH})
 
 find_package(log4cplus REQUIRED)
 find_package(SDL REQUIRED )

@@ -1,5 +1,8 @@
 find_path(LOG4CPLUS_INCLUDE_DIR log4cplus/logger.h ${CMAKE_SOURCE_DIR}/dependence/include)
-find_library(LOG4CPLUS_LIBRARY NAMES log4cplusD PATHS ${CMAKE_SOURCE_DIR}/dependence/lib)
+
+
+find_library(LOG4CPLUS_LIBRARY NAMES log4cplus PATHS ${CMAKE_SOURCE_DIR}/dependence/lib)
+
 
 IF(LOG4CPLUS_INCLUDE_DIR AND LOG4CPLUS_LIBRARY)
 	SET(LOG4CPLUS_FOUND TRUE)

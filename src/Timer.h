@@ -1,3 +1,7 @@
+
+#ifndef TIMER_H__
+#define TIMER_H__
+
 #include<SDL2/SDL_timer.h>
 
 class Timer {
@@ -21,16 +25,26 @@ class Timer {
         before_ = current_;
         current_ = SDL_GetPerformanceCounter();
     }
-    float sinceBegin() {
-        return (current_ - start_) * 1000.0f / frequency_;
+    float sinceBeginInSecond() {
+        return 1.0f * (current_ - start_)  / frequency_;
     }
-    float sinceLastTick() {
-        return ((current_ - before_) * 1000.0f) / frequency_;
+	
+	float sinceBeginInMilliSecond(){ 
+		return 1000.0f * (current_ - start_)  / frequency_;
+	}
+
+    float sinceLastTickInSecond() {
+		return 1.0f * (current_ - before_) / frequency_;
     }
+
+	float sinceLastTickInMillSecond(){
+		return 1000.0f * (current_ - before_) / frequency_;
+	}
+
 
 };
 
-
+#endif // TIMER_H__
 
 
 

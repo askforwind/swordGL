@@ -17,7 +17,7 @@
 
 #include "Platform.h"
 #include <stdint.h>
-class FIBITMAP;
+struct FIBITMAP;
 
 SWORD_BEGIN
 

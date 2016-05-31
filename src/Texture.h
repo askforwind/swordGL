@@ -48,9 +48,9 @@ public:
 
 	const std::string& self_id()const { return self_id_; }
 
+	Texture();
 private:
 
-	Texture();
 
 	void createTexture(uint8_t* data,
 					   uint8_t color_type,
