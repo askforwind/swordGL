@@ -1,8 +1,8 @@
 #ifndef SWORD_CAMERA_H__
 #define SWORD_CAMERA_H__
 
-#include "Node.h"
-
+#include "Platform.h"
+#include <glm\glm.hpp>
 SWORD_BEGIN
 
 class SWORD_EXPORT Camera
@@ -34,7 +34,9 @@ public:
 
 	glm::vec3 get_right()const;
 
-	const glm::mat4 get_matrix()const;
+	const glm::vec3& get_position()const;
+
+	const glm::mat4& get_matrix()const;
 
 protected:
 	void updateView();
@@ -48,6 +50,8 @@ protected:
 	glm::vec3 direction_;
 	glm::vec3 position_;
 	glm::vec3 up_;
+
+	glm::mat4 matrix_;
 
 	float view_filed_;
 	float aspect_;

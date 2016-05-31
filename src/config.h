@@ -31,7 +31,10 @@
 
 #endif
 
-
+#define kINVALID_VAO_ID  0
+#define kINVALID_VBO_ID  0
+#define kINVALID_MAGIC_NUM  0xffffffff
+#define kINVALID_SHADER_LOCATION  0xffffffff
 
 
 

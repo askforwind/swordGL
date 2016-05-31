@@ -1,31 +1,12 @@
-#include<GL/glew.h>
-#include"Root.h"
-#include"shader.h"
-#include"FPSCamera.h"
-#include"ResourceGroup.h"
-#include<iostream>
-#include"SDL2\SDL_mouse.h"
-#include"Timer.h"
-#include "SDL2/SDL_gamecontroller.h"
-#include "assimp\Importer.hpp"
-#include "assimp\postprocess.h"
-#include "assimp\scene.h"
-#include "glm/gtx/quaternion.hpp"
-#include "glm\glm.hpp"
-#include <set>
-#include "LogManager.h"
-#include "config.h"
-#include "ResourceDef.h"
-#include "Texture.h"
-#include <fstream>
-#include "Skeleton.h"
-#include "../build/rightAnim.h"
 
-int32_t matId;
-SWORD::Root root;
+#include "test.h"
+
 
 
 bool wasd[6] = { false, false, false, false,false,false };
+
+bool output_Pos = false;
+int shipDir = 1;
 
 void keyPress(const SDL_KeyboardEvent &arg) {
 	if (arg.keysym.sym == SDLK_w) wasd[0] = true;
@@ -34,7 +15,8 @@ void keyPress(const SDL_KeyboardEvent &arg) {
 	if (arg.keysym.sym == SDLK_d) wasd[3] = true;
 	if (arg.keysym.sym == SDLK_q) wasd[4] = true;
 	if (arg.keysym.sym == SDLK_e) wasd[5] = true;
-	//std::cout << wasd[0] << wasd[1] << wasd[2] << wasd[3] << std::endl;
+	if (arg.keysym.sym == SDLK_o) output_Pos = true;
+	if (arg.keysym.sym == SDLK_f) shipDir *= -1;
 }
 
 void keyRelease(const SDL_KeyboardEvent& arg) {
@@ -44,13 +26,18 @@ void keyRelease(const SDL_KeyboardEvent& arg) {
 	if (arg.keysym.sym == SDLK_d) wasd[3] = false;
 	if (arg.keysym.sym == SDLK_q) wasd[4] = false;
 	if (arg.keysym.sym == SDLK_e) wasd[5] = false;
-	//std::cout << wasd[0] << wasd[1] << wasd[2] << wasd[3] << std::endl;
+	if (arg.keysym.sym == SDLK_o) output_Pos = false;
 }
-float speed = 0.02;
-void update(SWORD::FPSCamera& cam, float dt) {
 
-	int ox, oy;
-	//std::cout << dt << std::endl;
+bool toMoveMouse = false;
+
+void moveMouse(const SDL_MouseMotionEvent& arg) {
+	toMoveMouse = true;
+}
+
+float speed = 0.2f;
+void update(SWORD::FPSCamera& cam, float dt) {
+	
 	int z = wasd[2] - wasd[0];
 	int	x = wasd[3] - wasd[1];
 	int y = wasd[4] - wasd[5];
@@ -60,109 +47,80 @@ void update(SWORD::FPSCamera& cam, float dt) {
 	if (x) d = 1.0f*x*cam.get_right();
 	if (z) r = -1.0f*z*cam.get_direction();
 	if (y) u = 1.0f*y*cam.get_up();
-	//std::cout << d.x << d.y << d.z << std::endl;
 	if (x || z || y) cam.translate(glm::normalize(d + r + u)*dt*speed);
 
-	SDL_GetMouseState(&ox, &oy);
-	float offx = 400.0f - ox;
-	float offy = 300.0f - oy;
-	cam.yaw(offx*0.001);
-	cam.pitch(offy*0.001);
-	SDL_WarpMouseInWindow(root.get_render_window()->get_win_handle(), 400, 300);
-	//SDL_PumpEvents();
-	SDL_FlushEvent(SDL_MOUSEMOTION);
-	glm::mat4 mvp = cam.get_matrix()*glm::mat4(1.0f);
-	glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
+	if (toMoveMouse) {
+		int ox, oy;
+		SDL_GetMouseState(&ox, &oy);
+		int w, h;
+		g_root.get_render_window()->get_win_size(w, h);
+		cam.moveMouse(w / 2.0f - ox, h / 2.0f - oy, 0.001f);
+		SDL_WarpMouseInWindow(g_root.get_render_window()->get_win_handle(), w / 2.0f, h / 2.0f);
+		SDL_PumpEvents();
+		SDL_FlushEvent(SDL_MOUSEMOTION);
+	}
+	toMoveMouse = false;
+
+	glm::vec3 p = cam.get_position();
+	if (output_Pos) std::cout << p.x << " " << p.y << " " << p.z << std::endl;
+
+}
+
+void updateShip(SWORD::Entity* ship,SWORD::Entity* fuck,float time)
+{
+	float s = time*shipDir;
+	ship->translate(glm::vec3(0.01f, 0.0f, 0.0f)*s, SWORD::Coord::LOCAL);
+	fuck->translate(glm::vec3(0.01f, 0.0f, 0.0f)*s, SWORD::Coord::LOCAL);
 }
 
 int main(int argc, char*argv []) {
-	root.init();
-	SDL_WarpMouseInWindow(root.get_render_window()->get_win_handle(), 400, 300);
+	g_root.init();
+	g_root.get_render_window()->set_fullscreen(true);
+	SDL_WarpMouseInWindow(g_root.get_render_window()->get_win_handle(), 400, 300);
 	SWORD::FPSCamera mCamera;
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-	mCamera.set_clip_plane(0.1f, 10000.0f);
-	mCamera.set_aspect(4.0f / 3.0f);
-	mCamera.set_position(glm::vec3(0, 0, 60));
-	mCamera.lookAt(glm::vec3(0, 0, 0));
-	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 mvp = mCamera.get_matrix()*  model;
-
-	Technique tech;
-	tech.Init();
-	if(tech.AddShader(GL_VERTEX_SHADER, "vs.glsl")!=true) assert(0);
-	if (tech.AddShader(GL_FRAGMENT_SHADER, "ps.glsl") != true) assert(0);
-	if (tech.Finalize() != true) assert(0);
-	tech.Enable();
-
-	SDL_ShowCursor(0);
-	matId = tech.GetUniformLocation("MVP");
-	GLint texID = tech.GetUniformLocation("gColorMap");
-	glUniformMatrix4fv(matId, 1, GL_FALSE, &mvp[0][0]);
-	glUniform1i(texID, 0);
-
-	uint32_t boneId = tech.GetUniformLocation("bones");
-
-	SWORD::ResourceGroup rg;
-	std::string module_id = rg.loadModule("war_fbx.FBX");
-	SWORD::ModulePtr module = rg.get<rg.MODULE>(module_id);
-
-	uint32_t VAO[10];
-	glGenVertexArrays(module->sub_meshs.size(), VAO);
-	for (size_t i = 0; i < module->sub_meshs.size(); i++) {
-		SWORD::MeshPtr mesh = rg.get<rg.MESH>(module->sub_meshs[i]);
-		
-		glBindVertexArray(VAO[i]);
-
-		uint32_t pos, tex, index, bone, weight;
-		glGenBuffers(1, &pos);
-		glGenBuffers(1, &tex);
-		glGenBuffers(1, &index);
-		glGenBuffers(1, &bone);
-		glGenBuffers(1, &weight);
-
-		glBindBuffer(GL_ARRAY_BUFFER,pos);
-		glBufferData(GL_ARRAY_BUFFER, mesh->vertex.size() * sizeof(mesh->vertex[0]),
-					 mesh->vertex.data(), GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, tex);
-		glBufferData(GL_ARRAY_BUFFER, mesh->texCoord.size() * sizeof(mesh->texCoord[0]),
-					 mesh->texCoord.data(), GL_STATIC_DRAW);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->index.size() * sizeof(mesh->index[0]),
-					 mesh->index.data(), GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, bone);
-		glBufferData(GL_ARRAY_BUFFER, mesh->joint_id.size() * sizeof(mesh->joint_id[0]),
-					 mesh->joint_id.data(), GL_STATIC_DRAW);
-		glEnableVertexAttribArray(2);
-		glVertexAttribIPointer(2, 4, GL_UNSIGNED_INT, 0, 0);
-		
-		glBindBuffer(GL_ARRAY_BUFFER, weight);
-		glBufferData(GL_ARRAY_BUFFER, mesh->joint_weight.size() * sizeof(mesh->joint_weight[0]),
-					 mesh->joint_weight.data(), GL_STATIC_DRAW);
-		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-	}
-
-	SWORD::MeshPtr mesh0 = rg.get<rg.MESH>(module->sub_meshs[0]);
-	SWORD::SkeletonPtr ske = rg.get<rg.SKELETON>(mesh0->skeleton_id);
-
+	initCamera(&mCamera);
 
 	
+	assert(glGetError()==0);
+	
+	SWORD::TechniquePtr scene_tech = initSceneTech();
+	SWORD::TechniquePtr tech = initWarriorTech();
+	initDirectonLight(scene_tech, "light", 1);
+	bindTechToBlock(tech, "light", 1);
+
+	SWORD::EntityManager eMgr(&g_Combiner, &mCamera);
+
+	SWORD::ModulePtr module = SWORD::ResourceGroup::instance().loadModule("D:/swordGL/resource/war_fbx.FBX");
+	SWORD::Entity* et = eMgr.creatEntity(tech, module);
+
+	SWORD::ModulePtr ship = SWORD::ResourceGroup::instance().loadModule("D:/swordGL/resource/ship.fbx");
+	SWORD::Entity* p_ship = eMgr.creatEntity(scene_tech, ship);
+
+	SWORD::ModulePtr fuck = SWORD::ResourceGroup::instance().loadModule("D:/swordGL/resource/boblampclean.md5mesh");
+	SWORD::Entity* p_fuck = eMgr.creatEntity(tech, fuck);
+
+	SWORD::ModulePtr scene = SWORD::ResourceGroup::instance().loadModule("D:/swordGL/resource/newcity.fbx");
+	eMgr.creatEntity(scene_tech, scene);
+
+	p_ship->set_pos(glm::vec3(927.355f, 1000.344f, -43.9387f),SWORD::Coord::WORLD);
+	p_fuck->set_pos(glm::vec3(927.355f, 1080.344f, -43.9387f), SWORD::Coord::WORLD);
 	bool quit = false;
+	SDL_ShowCursor(0);
+
 	SDL_Event evt;
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	
 	Timer time;
 	time.begin();
 
-	glUniform1i(texID, 0);
-	std::vector<Matrix4f> tran;
+	int fps_count = 0;
+	float fps_time = 0.0f;
+	
+	SWORD::RenderQueue RQ;
+	
+	assert(glGetError() == 0);
+
 	while (!quit) {
 		
 		glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -179,29 +137,43 @@ int main(int argc, char*argv []) {
 			case SDL_KEYDOWN:
 				keyPress(evt.key);
 				break;
+			case SDL_MOUSEMOTION:
+				moveMouse(evt.motion);
 			default:break;
 			}
 		}
-		
-		update(mCamera, time.sinceLastTick());
-		ske->updateAnimation(time.sinceBegin()*0.001f);
-		glUniformMatrix4fv(boneId, ske->getAnimationMatrix().size(),
-						   GL_FALSE,
-						   &ske->getAnimationMatrix().data()[0][0][0]);
+
+		update(mCamera, time.sinceLastTickInMillSecond());
+		updateShip(p_ship, p_fuck, time.sinceBeginInSecond());
+
+		fps_time += time.sinceLastTickInMillSecond();
+		fps_count++;
+
+		if (fps_time > 1000.0f) {
+			g_root.get_render_window()->set_title(
+				std::to_string(fps_count).c_str());
+			fps_count = 0;
+			fps_time = 0.0f;
+		}
+
 		time.tick();
 		assert(glGetError() == 0);
 
-		for (size_t i = 0; i < module->sub_meshs.size(); i++) {
-			glBindVertexArray(VAO[i]);
+		SWORD::MultiDrawCallCommandVec mdcc;
 
-			SWORD::MeshPtr mesh = rg.get<rg.MESH>(module->sub_meshs[i]);
-			SWORD::MaterialPtr material = rg.get<rg.MATERIAL>(mesh->material_id);
-			SWORD::TexturePtr tex = rg.get<rg.TEXTURE>(material->tex_diff);
-			tex->bindToActiveUnit(0);
-			glDrawElements(GL_TRIANGLES, mesh->index.size(), GL_UNSIGNED_INT, 0);
+		eMgr.generateDrawCallQueue(mdcc);
+
+		SWORD::RenderQueue RQ;
+
+		
+
+		for (size_t id = 0; id != mdcc.size(); ++id) {
+			RQ.inputMultiDrawCall(std::move(mdcc[id]));
 		}
 
-		root.swapBuffer();
+		RQ.render();
+		RQ.cleanDrawCallQueue();
+		g_root.swapBuffer();
 	}
 
 	glBindVertexArray(0);

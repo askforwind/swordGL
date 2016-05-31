@@ -23,16 +23,26 @@ namespace {
 	}
 }
 
-Skeleton & Skeleton::operator=(const Skeleton & rhs) {
-	if (this == &rhs) return *this;
 
-	this->animations_ = rhs.getAnimationsClip();
-	this->joint_tree_ = rhs.getJointTree();
-	this->joint_map_ = rhs.getJointMap();
-	this->animation_matrix_ = rhs.getAnimationMatrix();
-	this->self_id_ = rhs.self_id();
-	this->effective_ = rhs.getEffectiveJoint();
-	return *this;
+
+void Skeleton::copyTo( Skeleton & rhs) {
+	if (this == &rhs) return;
+
+	rhs.set_animation_clips(this->animations_);
+	rhs.set_joint_tree(this->joint_tree_);
+	rhs.set_joint_map(this->joint_map_);
+	rhs.set_self_id(this->self_id_);
+	rhs.set_effective_joint(this->effective_);
+}
+
+void Skeleton::moveTo(Skeleton& rhs) {
+	if (this == &rhs) return;
+
+	rhs.set_animation_clips(std::move(this->animations_));
+	rhs.set_joint_tree(std::move(this->joint_tree_));
+	rhs.set_joint_map(std::move(this->joint_map_));
+	rhs.set_self_id(std::move(this->self_id_));
+	rhs.set_effective_joint(std::move(this->effective_));
 }
 
 void Skeleton::buildJointTree(const aiNode * root_node) {
@@ -52,8 +62,8 @@ void Skeleton::buildJointTree(const aiNode * root_node) {
 
 std::pair<Skeleton::Joint*, int>  Skeleton::findJointByName(const std::string & name) {
 	auto iter = joint_map_.find(name);
-	return iter == joint_map_.end() ?
-		std::make_pair(nullptr, -1)
+	return iter == joint_map_.end() 
+		? std::make_pair(nullptr, -1)
 		: std::make_pair(&joint_tree_[iter->second], iter->second);
 }
 
@@ -71,6 +81,44 @@ Skeleton::updateAnimation(float time_in_second) {
 	return animation_matrix_;
 }
 
+void Skeleton::calcInterpolatedRotation(float anim_time, const JointPose & pose, glm::quat & Q) {
+	if (pose.rotate_key.size() == 1) {
+		Q = pose.rotate_key[0].rotate;
+		return;
+	}
+
+	int now = this->getJointRotateKey(anim_time, pose);
+	int next = now + 1;
+
+	float now_time = pose.rotate_key[now].time;
+	float next_time = pose.rotate_key[next].time;
+	float delta_time = next_time - now_time;
+	float factor = (anim_time - now_time) / delta_time;
+	assert(factor >= 0.0f&&factor <= 1.0f);
+
+	Q = glm::slerp(pose.rotate_key[now].rotate, pose.rotate_key[next].rotate, factor);
+}
+
+void Skeleton::calcInterpolatedTranslation(float anim_time, const JointPose & pose, glm::vec3 & V) {
+	if (pose.translate_key.size() == 1) {
+		V = pose.translate_key[0].translate;
+		return;
+	}
+
+	int now = this->getJointTransformKey(anim_time, pose);
+	int next = now + 1;
+	assert(next < (int)pose.translate_key.size());
+
+	float now_time = pose.translate_key[now].time;
+	float next_time = pose.translate_key[next].time;
+	float delta_time = next_time - now_time;
+	float factor = (anim_time - now_time) / delta_time;
+	assert(factor >= 0.0f&&factor <= 1.0f);
+
+	V = pose.translate_key[now].translate*(1.0f - factor) +
+		pose.translate_key[next].translate*factor;
+}
+
 void Skeleton::_updateAnimation(float animation_time, int joint_idx ,
 								int anim_idx,glm::mat4 parent_transform) {
 	Joint* j = &joint_tree_[joint_idx];
@@ -81,18 +129,13 @@ void Skeleton::_updateAnimation(float animation_time, int joint_idx ,
 		const std::vector<JointPose>& sample = animations_[anim_idx].samples;
 		int pose_idx = j->pose_id[anim_idx];
 
-		int Rframe = sample[pose_idx].rotate_key.size() == 1 ?
-			0 :
-			getJointRotateKey(animation_time, sample[pose_idx]);
+		glm::quat Q;
+		calcInterpolatedRotation(animation_time, sample[pose_idx], Q);
+		glm::vec3 V;
+		calcInterpolatedTranslation(animation_time, sample[pose_idx], V);
 
-		int Tframe = sample[pose_idx].translate_key.size() == 1 ?
-			0 :
-			getJointTransformKey(animation_time, sample[pose_idx]);
-
-		const glm::quat& Q = sample[pose_idx].rotate_key[Rframe].rotate;
-		glm::mat4 R = glm::toMat4(Q);
-		const glm::vec3& V = sample[pose_idx].translate_key[Tframe].translate;
 		glm::mat4 T = glm::translate(glm::mat4(1.0f), V);
+		glm::mat4 R = glm::toMat4(Q);
 		node_transform = T * R;
 	}
 
@@ -117,7 +160,7 @@ void Skeleton::addAnimation(AnimationClip && anim) {
 
 int Skeleton::addEffectiveJoint(int joint_idx, EffectiveJoint & j) {
 	
-
+	assert(joint_idx >= 0);
 	assert(joint_idx < joint_tree_.size());
 
 	assert(joint_tree_[joint_idx].effective_joint_id < 0
@@ -145,10 +188,42 @@ int Skeleton::addEffectiveJoint(int joint_idx, EffectiveJoint & j) {
 	return effective_.size() - 1;
 }
 
+void Skeleton::set_joint_tree(const std::vector<Joint>& jt) {
+	this->joint_tree_ = jt;
+}
+
+void Skeleton::set_joint_map(const std::unordered_map<std::string, int>& jm) {
+	this->joint_map_ = jm;
+}
+
+void Skeleton::set_animation_clips(const std::vector<AnimationClip>& ac) {
+	this->animations_ = ac;
+}
+
+void Skeleton::set_effective_joint(const std::vector<EffectiveJoint>& ej) {
+	this->effective_ = ej;
+}
+
+void Skeleton::set_joint_tree(std::vector<Joint>&& jt) {
+	this->joint_tree_ = std::move(jt);
+}
+
+void Skeleton::set_joint_map(std::unordered_map<std::string, int>&& jm) {
+	this->joint_map_ = std::move(jm);
+}
+
+void Skeleton::set_animation_clips(std::vector<AnimationClip>&& ac) {
+	this->animations_ = std::move(ac);
+}
+
+void Skeleton::set_effective_joint(std::vector<EffectiveJoint>&& ej) {
+	this->effective_ = std::move(ej);
+}
+
 void Skeleton::_buildJointTree(const aiNode* node, int index) {
 
 	assert(index < joint_tree_.size());
-	joint_tree_[index].children_begin = joint_tree_.size();
+	joint_tree_[index].children_begin = static_cast<uint16_t>(joint_tree_.size());
 
 	for (int iChild = 0; iChild != node->mNumChildren; ++iChild) {
 		Joint cj;
@@ -185,7 +260,6 @@ int Skeleton::getJointTransformKey(float anim_time, const JointPose& pose) const
 
 	return iter - pose.translate_key.begin() - 1;
 }
-
 
 
 SWORD_END

@@ -27,6 +27,7 @@ SWORD_BEGIN
 
 class SWORD_EXPORT Skeleton {
 public:
+	// to much data,high cache miss!!!
 	struct Joint {
 		uint16_t children_begin;
 		uint16_t children_num;
@@ -45,8 +46,6 @@ public:
 		glm::quat rotate;
 		float time;
 	};
-
-	Skeleton& operator = (const Skeleton& rhs);
 
 	struct TranslateKey {
 		glm::vec3 translate;
@@ -73,6 +72,8 @@ public:
 	
 	size_t get_joints_nums()const { return joint_tree_.size(); }
 
+	size_t get_effectiv_joints_nums()const { return effective_.size(); }
+
 	void addAnimation(AnimationClip& anim) { animations_.push_back(anim); }
 	
 	void addAnimation(AnimationClip&& anim);
@@ -83,16 +84,35 @@ public:
 
 	int addEffectiveJoint(int joint_idx, EffectiveJoint& j);
 
-	const std::vector<glm::mat4>& getAnimationMatrix()const { return animation_matrix_; }
-	// for deep copy //
-	const std::vector<Joint>& getJointTree()const { return joint_tree_; }
-	// for deep copy //
-	const std::unordered_map<std::string, int>& getJointMap()const { return joint_map_; }
-	// for deep copy //
-	const std::vector<AnimationClip>& getAnimationsClip()const { return animations_; }
-	// for deep copy
-	const std::vector<EffectiveJoint>& getEffectiveJoint()const { return effective_; }
+	std::vector<glm::mat4>& getAnimationMatrix() { return animation_matrix_; }
+
+	// this function is overload for copy and move
+	void set_joint_tree(const std::vector<Joint>& jt);
+	// this function is overload for copy and move
+	void set_joint_map(const std::unordered_map<std::string, int>& jm);
+	// this function is overload for copy and move
+	void set_animation_clips(const std::vector<AnimationClip>& ac);
+	// this function is overload for copy and move
+	void set_effective_joint(const std::vector<EffectiveJoint>& ej);
+
+	// this function is overload for copy and move
+	void set_joint_tree(std::vector<Joint>&& jt);
+	// this function is overload for copy and move
+	void set_joint_map(std::unordered_map<std::string, int>&& jm);
+	// this function is overload for copy and move
+	void set_animation_clips(std::vector<AnimationClip>&& ac);
+	// this function is overload for copy and move
+	void set_effective_joint(std::vector<EffectiveJoint>&& ej);
+
+	void copyTo(Skeleton& rhs);
+
+	void moveTo(Skeleton& rhs);
+
 private:
+	void calcInterpolatedRotation(float anim_time, const JointPose& pose, glm::quat& q);
+
+	void calcInterpolatedTranslation(float anim_time, const JointPose& pose, glm::vec3& v);
+
 	std::vector<glm::mat4> animation_matrix_;
 
 	void _updateAnimation(float animation_time, int joint_idx,

@@ -1,12 +1,12 @@
-#include"BatchManager.h"
-#include"ShaderManager.h"
 #include"RenderWindow.h"
-#include<SDL2/SDL.h>
+#include<cassert>
+#include<SDL2/SDL_video.h>
+#include "Singleton.h"
 
 // this class is the root of the engine,
 
 SWORD_BEGIN
-class SWORD_EXPORT Root {
+class SWORD_EXPORT Root:public Singleton<Root> {
   public:
     Root();
 // swapBuffer,call it every frame
@@ -16,11 +16,6 @@ class SWORD_EXPORT Root {
     inline void swapBuffer() {
         assert(render_window_.get_win_handle());
         SDL_GL_SwapWindow(render_window_.get_win_handle());
-        batch_manager_.cleanDynamicBatch();
-    }
-
-    inline BatchManager* get_batch_manager() {
-        return &batch_manager_;
     }
 
     inline RenderWindow* get_render_window() {
@@ -43,9 +38,6 @@ class SWORD_EXPORT Root {
     RenderWindow render_window_;
   
     SDL_GLContext context_;
-
-    BatchManager batch_manager_;
-    ShaderManager shader_manager_;
 
 };
 SWORD_END

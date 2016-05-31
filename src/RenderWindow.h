@@ -14,7 +14,7 @@
 
 #include"Platform.h"
 
-class SDL_Window;
+struct SDL_Window;
 
 SWORD_BEGIN
 
@@ -37,6 +37,8 @@ class SWORD_EXPORT RenderWindow {
     void set_visible(bool visable);
 
     void get_win_size(int& width, int& height);
+
+	void get_win_pos(int& x, int& y);
 
     void set_fullscreen(bool full);
 
