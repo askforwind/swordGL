@@ -472,7 +472,7 @@ enum aiComponent
  *  be to exclude all line and point meshes from the import. This
  *  is an integer property, its default value is 0.
  */
-#define AI_CONFIG_PP_SBP_REMOVE           \
+#define AI_CONFIG_PP_SBP_REMOVE             \
     "PP_SBP_REMOVE"
 
 // ---------------------------------------------------------------------------

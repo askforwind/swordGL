@@ -1,10 +1,10 @@
+#include <map>
 #include "AssimpCodec.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
-#include "ResourceDef.h"
+
 SWORD_BEGIN
-//AI_CONFIG_PP_SLM_VERTEX_LIMIT
 
 class AssimpCodecImp {
 public:
@@ -13,25 +13,18 @@ public:
 	}
 
 	void load(std::vector<Mesh>& mesh,
-			  std::vector<Material>& material, Skeleton& skeleton, bool& has_skeleton) {
+			  std::vector<Material>& material,Skeleton& skeleton) {
 		const aiScene* scene = importer_.GetScene();
 
-		has_skeleton = scene->HasAnimations();
-		if (has_skeleton) {
-			skeleton.buildJointTree(scene->mRootNode);
-		}
-		else {
-			loadPreTransform(scene->mRootNode);
-		}
+		skeleton.buildJointTree(scene->mRootNode);
 
+		mesh.resize(scene->mNumMeshes);
 		for (uint32_t i = 0; i < scene->mNumMeshes; ++i) {
 			const aiMesh* ms = scene->mMeshes[i];
-			if (ms->mFaces[0].mNumIndices != 3) continue;
-			mesh.push_back(SWORD::Mesh());
-			loadIndexInfo(ms, mesh.back());
-			loadVertexInfo(ms, mesh.back(),i);
-			loadJoint(ms, mesh.back(), skeleton);
-			mesh.back().material_id = std::to_string(ms->mMaterialIndex);
+			loadIndexInfo(ms, mesh[i]);
+			loadVertexInfo(ms, mesh[i]);
+			loadJoint(ms, mesh[i], skeleton);
+			mesh[i].material_id = std::to_string(ms->mMaterialIndex);
 		}
 
 		assert(scene->HasMaterials());
@@ -39,7 +32,7 @@ public:
 		for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 			loadMaterial(scene->mMaterials[i], material[i]);
 		}
-
+		
 		assert((scene->HasAnimations() && scene->mNumAnimations != 0)
 			   || (!scene->HasAnimations() && scene->mNumAnimations == 0));
 
@@ -70,33 +63,18 @@ private:
 	}
 	void loadMaterial(const aiMaterial* pmat, Material& m) {
 		aiColor3D diff;
-		pmat->Get(AI_MATKEY_COLOR_DIFFUSE, diff) ;
+		pmat->Get(AI_MATKEY_COLOR_DIFFUSE, diff);
 		m.diffuse = convert(diff);
 
 		aiColor3D spec;
-		pmat->Get(AI_MATKEY_COLOR_SPECULAR, spec) ;
+		pmat->Get(AI_MATKEY_COLOR_SPECULAR, spec);
 		m.specular = convert(spec);
 
 		aiColor3D ambi;
 		pmat->Get(AI_MATKEY_COLOR_AMBIENT, ambi);
 		m.ambient = convert(ambi);
 
-		aiColor3D emissie;
-		pmat->Get(AI_MATKEY_COLOR_EMISSIVE, emissie);
-		m.emissive = convert(emissie);
-
-		aiColor3D transparent;
-		pmat->Get(AI_MATKEY_COLOR_TRANSPARENT, transparent);
-		m.transparent = convert(transparent);
-
-		pmat->Get(AI_MATKEY_SHININESS, m.shininess);
-		
-		int two_sided = 0;
-		pmat->Get(AI_MATKEY_TWOSIDED, two_sided);
-		m.twosided = two_sided != 0;
-
-		uint32_t num_diffuse_texture = pmat->GetTextureCount(aiTextureType_DIFFUSE);
-		if(num_diffuse_texture) {
+		if (pmat->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 			aiString path;
 			if (pmat->GetTexture(aiTextureType_DIFFUSE, 0, &path) == AI_SUCCESS) {
 				m.tex_diff = path.C_Str();
@@ -104,38 +82,26 @@ private:
 		}
 	}
 
-	void loadVertexInfo(const aiMesh* pmesh, Mesh& m, uint32_t mesh_idx) {
+	void loadVertexInfo(const aiMesh* pmesh, Mesh& m) {
 		assert(pmesh->HasFaces());
 		assert(pmesh->HasNormals());
+		assert(pmesh->HasTextureCoords(0));
 		assert(pmesh->HasPositions());
 
 		m.vertex.resize(pmesh->mNumVertices);
 		m.normal.resize(pmesh->mNumVertices);
-
-		auto iter = pre_translate_index_.find(mesh_idx);
-		if (iter != pre_translate_index_.end()) {
-			m.pre_trans =  convert(pre_translate_matrix_[iter->second]);
-		}
+		m.texCoord.resize(pmesh->mNumVertices);
 
 		for (uint32_t i = 0; i < pmesh->mNumVertices; ++i) {
 			aiVector3D v = pmesh->mVertices[i];
-			m.vertex[i] = glm::vec3(m.pre_trans * glm::vec4(v.x, v.y, v.z, 1.0f));
+			m.vertex[i] = glm::vec3(v.x, v.y, v.z);
 
 			aiVector3D n = pmesh->mNormals[i];
-			m.normal[i] = glm::normalize(glm::vec3(m.pre_trans * glm::vec4(n.x, n.y, n.z, 0.0f)));
+			m.normal[i] = glm::vec3(n.x, n.y, n.z);
 
+			aiVector3D t = pmesh->mTextureCoords[0][i];
+			m.texCoord[i] = glm::vec2(t.x, t.y);
 		}
-
-		// only support first channly
-		m.texCoord.clear();
-		if (pmesh->HasTextureCoords(0)) {
-			m.texCoord.resize(pmesh->mNumVertices);
-			for (uint32_t v = 0; v < pmesh->mNumVertices; ++v) {
-				m.texCoord[v] = glm::vec2(convert(pmesh->mTextureCoords[0][v]));
-			}
-		}
-		
-	
 
 		m.color.resize(pmesh->mNumVertices, glm::vec4(1.0f));
 		if (pmesh->HasVertexColors(0)) {
@@ -144,12 +110,9 @@ private:
 				m.color[i] = glm::vec4(c.r, c.g, c.b, c.a);
 			}
 		}
-
-		
 	}
 
 	void loadIndexInfo(const aiMesh* pmesh, Mesh& m) {
-
 		assert(pmesh->HasFaces());
 		assert(pmesh->mFaces[0].mNumIndices == 3);
 
@@ -162,7 +125,7 @@ private:
 
 	}
 
-	void addJointID(Mesh&m, int32_t boneID, float weight, int verID) {
+	void addJointID(Mesh&m, int32_t boneID, float weight,int verID) {
 		for (int i = 0; i < 4; ++i) {
 			if (m.joint_weight[verID][i] == 0.0f) {
 				m.joint_id[verID][i] = boneID;
@@ -173,7 +136,7 @@ private:
 		assert(0);
 	}
 
-	void loadJoint(const aiMesh* pmesh, Mesh& m, Skeleton& skeleton) {
+	void loadJoint(const aiMesh* pmesh, Mesh& m,Skeleton& skeleton) {
 		if (!pmesh->HasBones()) return;
 
 		m.joint_id.resize(m.vertex.size(), glm::ivec4(0, 0, 0, 0));
@@ -181,7 +144,7 @@ private:
 		for (uint32_t i = 0; i < pmesh->mNumBones; ++i) {
 			aiBone* b = pmesh->mBones[i];
 			std::string bone_name = b->mName.C_Str();
-
+			
 			std::pair<Skeleton::Joint*, int> r = skeleton.findJointByName(bone_name);
 			Skeleton::Joint* j = r.first;
 
@@ -191,7 +154,8 @@ private:
 			ej.offset = convert(b->mOffsetMatrix);
 			int e_idx = skeleton.addEffectiveJoint(r.second, ej);
 
-			for (uint32_t iWeight = 0; iWeight < b->mNumWeights; ++iWeight) {
+			for (uint32_t iWeight=0;iWeight<b->mNumWeights;++iWeight)
+			{
 				addJointID(m, e_idx,
 						   b->mWeights[iWeight].mWeight,
 						   b->mWeights[iWeight].mVertexId);
@@ -240,36 +204,7 @@ private:
 		skeleton.addAnimation(std::move(channel));
 	}
 
-	void loadPreTransform(aiNode* root) {
-		pre_translate_matrix_.clear();
-		pre_translate_index_.clear();
-		pre_translate_matrix_.insert(std::make_pair(root->mName.C_Str(), root->mTransformation));
-		updateTranslateIndex(root);
-		_loadPreTransform(root);
-	}
-
-	void updateTranslateIndex(aiNode* root) {
-		for (uint32_t i = 0; i != root->mNumMeshes; ++i) {
-			pre_translate_index_.insert(std::make_pair(root->mMeshes[i], root->mName.C_Str()));
-		}
-	}
-
-	void _loadPreTransform(aiNode* root) {
-		assert(pre_translate_matrix_.find(root->mName.C_Str()) != pre_translate_matrix_.end());
-		for (size_t i = 0; i < root->mNumChildren; i++) {
-			pre_translate_matrix_.insert(std::make_pair(root->mChildren[i]->mName.C_Str(),
-								  pre_translate_matrix_[root->mName.C_Str()]
-								  * root->mChildren[i]->mTransformation));
-			updateTranslateIndex(root->mChildren[i]);
-		}
-		for (size_t i = 0; i < root->mNumChildren; ++i) {
-			_loadPreTransform(root->mChildren[i]);
-		}
-	}
-
 	Assimp::Importer importer_;
-	std::unordered_map<std::string, aiMatrix4x4> pre_translate_matrix_;
-	std::unordered_map<uint32_t, std::string> pre_translate_index_;
 };
 
 AssimpCodec::AssimpCodec()
@@ -287,9 +222,8 @@ void AssimpCodec::decode(const std::string& filename) {
 
 void AssimpCodec::load(std::vector<Mesh>& mesh,
 					   std::vector<Material>& material,
-					   Skeleton& skeleton,
-					   bool& has_skeleton) {
-	p_Imp_->load(mesh, material, skeleton, has_skeleton);
+					   Skeleton& skeleton) {
+	p_Imp_->load(mesh, material, skeleton);
 }
 
 SWORD_END

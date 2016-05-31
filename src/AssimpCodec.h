@@ -16,7 +16,7 @@
 #define SWORD_ASSIMPCODEC_H__
 
 #include "Platform.h"
-#include "TypeDef.h"
+#include "ResourceDef.h"
 #include "Skeleton.h"
 #include <vector>
 
@@ -33,8 +33,7 @@ public:
 	void decode(const std::string& filename);
 	void load(std::vector<Mesh>& mesh,
 			  std::vector<Material>& material,
-			  Skeleton& skeleton,
-			  bool& has_skeleton);
+			  Skeleton& skeleton);
 private:
 	AssimpCodecImp* p_Imp_;
 };

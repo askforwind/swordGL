@@ -5,8 +5,6 @@
 
 SWORD_BEGIN
 
-Root* Root::msSingleton = nullptr;
-
 Root::Root()
     :context_(0) {
 }
@@ -60,8 +58,6 @@ void Root::createRenderWindow() {
                             SDL_WINDOWPOS_CENTERED,
                             SDL_WINDOWPOS_CENTERED,
                             800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-	int k = 0;
-	SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &k);
     if (!win) {
         WIND_LOG_ERROR(DEFAULT_WIND_LOGGER, SDL_GetError());
         exit(-1);
